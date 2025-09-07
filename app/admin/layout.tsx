@@ -5,31 +5,35 @@ import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { 
-  LayoutDashboard, 
-  Rocket, 
-  Code, 
-  Briefcase, 
-  GraduationCap, 
-  Pen, 
-  Mail, 
+import {
+  LayoutDashboard,
+  Rocket,
+  Code,
+  Briefcase,
+  GraduationCap,
+  Pen,
+  Mail,
   Settings,
   User,
   LogOut,
   Moon,
-  Sun
+  Sun,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { signOut } from "next-auth/react";
 import { useTheme } from "next-themes";
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const { data: session, status } = useSession();
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
   const { theme, setTheme } = useTheme();
-  
+
   // Set active tab based on pathname
   const getActiveTab = (path: string) => {
     if (path.includes("/blog")) return "blog";
@@ -38,18 +42,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     if (path.includes("/experience")) return "experience";
     if (path.includes("/education")) return "education";
     if (path.includes("/contact")) return "contact";
-    if (path.includes("/content")) return "content";
     if (path.includes("/profile")) return "profile";
     return "dashboard";
   };
 
   const [activeTab, setActiveTab] = useState(getActiveTab(pathname || ""));
-  
+
   // Update active tab when pathname changes
   useEffect(() => {
     setActiveTab(getActiveTab(pathname || ""));
   }, [pathname]);
-  
+
   // Handle theme toggle after mounting to prevent hydration mismatch
   useEffect(() => {
     setMounted(true);
@@ -69,9 +72,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center p-8 rounded-lg bg-card border border-destructive/20">
-          <h1 className="text-2xl font-bold text-destructive mb-3">Access Denied</h1>
-          <p className="text-card-foreground mb-4">You do not have permission to access this area.</p>
-          <Link href="/" className="px-4 py-2 bg-primary hover:bg-primary/80 text-primary-foreground rounded-md">
+          <h1 className="text-2xl font-bold text-destructive mb-3">
+            Access Denied
+          </h1>
+          <p className="text-card-foreground mb-4">
+            You do not have permission to access this area.
+          </p>
+          <Link
+            href="/"
+            className="px-4 py-2 bg-primary hover:bg-primary/80 text-primary-foreground rounded-md"
+          >
             Return to Homepage
           </Link>
         </div>
@@ -81,21 +91,55 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   // Define navigation tabs
   const tabs = [
-    { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard size={18} />, path: "/admin" },
+    {
+      id: "dashboard",
+      label: "Dashboard",
+      icon: <LayoutDashboard size={18} />,
+      path: "/admin",
+    },
     { id: "blog", label: "Blog", icon: <Pen size={18} />, path: "/admin/blog" },
-    { id: "projects", label: "Projects", icon: <Rocket size={18} />, path: "/admin/projects" },
-    { id: "skills", label: "Skills", icon: <Code size={18} />, path: "/admin/skills" },
-    { id: "experience", label: "Experience", icon: <Briefcase size={18} />, path: "/admin/experience" },
-    { id: "education", label: "Education", icon: <GraduationCap size={18} />, path: "/admin/education" },
-    { id: "contact", label: "Contact Messages", icon: <Mail size={18} />, path: "/admin/contact" },
-    { id: "content", label: "Site Content", icon: <Settings size={18} />, path: "/admin/content" },
-    { id: "profile", label: "Profile", icon: <User size={18} />, path: "/admin/profile" },
+    {
+      id: "projects",
+      label: "Projects",
+      icon: <Rocket size={18} />,
+      path: "/admin/projects",
+    },
+    {
+      id: "skills",
+      label: "Skills",
+      icon: <Code size={18} />,
+      path: "/admin/skills",
+    },
+    {
+      id: "experience",
+      label: "Experience",
+      icon: <Briefcase size={18} />,
+      path: "/admin/experience",
+    },
+    {
+      id: "education",
+      label: "Education",
+      icon: <GraduationCap size={18} />,
+      path: "/admin/education",
+    },
+    {
+      id: "contact",
+      label: "Contact Messages",
+      icon: <Mail size={18} />,
+      path: "/admin/contact",
+    },
+    {
+      id: "profile",
+      label: "Profile",
+      icon: <User size={18} />,
+      path: "/admin/profile",
+    },
   ];
 
   return (
     <div className="min-h-screen bg-background text-foreground flex">
       {/* Sidebar */}
-      <motion.div 
+      <motion.div
         className="w-64 bg-sidebar text-sidebar-foreground min-h-screen border-r border-sidebar-border flex flex-col"
         initial={{ x: -100, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
@@ -112,12 +156,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <nav className="flex-1 py-4 px-3">
           <div className="space-y-1">
             {tabs.map((tab) => (
-              <Link 
+              <Link
                 key={tab.id}
                 href={tab.path}
                 className={`flex items-center px-3 py-2 rounded-md transition-all ${
-                  activeTab === tab.id 
-                    ? "bg-sidebar-primary/20 text-sidebar-primary" 
+                  activeTab === tab.id
+                    ? "bg-sidebar-primary/20 text-sidebar-primary"
                     : "hover:bg-sidebar-accent text-sidebar-foreground/80"
                 }`}
               >
@@ -140,7 +184,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <p className="text-xs text-muted-foreground">Admin</p>
               </div>
             </div>
-            <button 
+            <button
               className="w-8 h-8 rounded-full bg-sidebar-accent flex items-center justify-center"
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
               aria-label="Toggle theme"
@@ -154,9 +198,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               )}
             </button>
           </div>
-          <Button 
+          <Button
             onClick={() => signOut()}
-            variant="outline" 
+            variant="outline"
             className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 flex items-center justify-center"
           >
             <LogOut size={14} className="mr-1" /> Sign Out
@@ -167,9 +211,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Main Content */}
       <div className="flex-1 bg-background">
         {/* Main content */}
-        <div className="p-6">
-          {children}
-        </div>
+        <div className="p-6">{children}</div>
       </div>
     </div>
   );

@@ -354,7 +354,6 @@ const EnhancedEditor = ({
 };
 
 // No need for ReactQuill dynamic import anymore
-import 'react-quill/dist/quill.snow.css';
 
 // Add custom styles for the rich text editor
 const customEditorStyles = `
@@ -526,7 +525,6 @@ export default function BlogManagement() {
   const [editorMode, setEditorMode] = useState<'rich' | 'markdown'>('rich');
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const quillRef = useRef<any>(null);
   
   // Filtered blog posts based on status filter
   const filteredBlogPosts = useMemo(() => {
