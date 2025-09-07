@@ -354,6 +354,7 @@ const EnhancedEditor = ({
 };
 
 // No need for ReactQuill dynamic import anymore
+import 'react-quill/dist/quill.snow.css';
 
 // Add custom styles for the rich text editor
 const customEditorStyles = `
@@ -499,8 +500,9 @@ export default function BlogManagement() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [bulkAction, setBulkAction] = useState<{ type: string; status: string } | null>(null);
   const [isBulkDialogOpen, setIsBulkDialogOpen] = useState(false);
-  const [newPost, setNewPost] = useState<Omit<BlogPost, 'id' | 'slug' | 'createdAt' | 'updatedAt' | 'userId' | 'user'>>({
+  const [newPost, setNewPost] = useState<Omit<BlogPost, 'id' | 'createdAt' | 'updatedAt' | 'userId' | 'user'> & { slug?: string }>({
     title: "",
+    slug: "",
     summary: "",
     content: "",
     coverImage: "",
@@ -525,6 +527,7 @@ export default function BlogManagement() {
   const [editorMode, setEditorMode] = useState<'rich' | 'markdown'>('rich');
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const quillRef = useRef<any>(null);
   
   // Filtered blog posts based on status filter
   const filteredBlogPosts = useMemo(() => {
@@ -893,6 +896,7 @@ export default function BlogManagement() {
       // Reset form and close dialog
       setNewPost({
         title: "",
+        slug: "",
         summary: "",
         content: "",
         coverImage: "",
