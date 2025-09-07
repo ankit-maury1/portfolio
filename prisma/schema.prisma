@@ -1,0 +1,283 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("MONGODB_URI")
+}
+
+// User model for authentication
+model User {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          Role      @default(USER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  accounts      Account[]
+  sessions      Session[]
+  twoFactorEnabled Boolean @default(false)
+  twoFactorSecret  String?
+  projects      Project[]
+  blogPosts     BlogPost[]
+  mediaItems    MediaItem[]
+}
+
+// NextAuth.js models
+model Account {
+  id                 String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId             String   @db.ObjectId
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?  
+  access_token       String?  
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?  
+  session_state      String?
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  sessionToken String   @unique
+  userId       String   @db.ObjectId
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  identifier  String
+  token       String   @unique
+  expires     DateTime
+
+  @@unique([identifier, token])
+}
+
+// Role enumeration for user access control
+enum Role {
+  USER
+  ADMIN
+  SUPERADMIN
+}
+
+// Profile model for portfolio owner info
+model Profile {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  name          String
+  title         String
+  summary       String    
+  email         String
+  phone         String?
+  location      String?
+  avatar        String?   // URL to the avatar image
+  resume        String?   // URL to the resume PDF
+  socialLinks   Json      // Store social media links as JSON
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+// Skills categorized by type
+model SkillCategory {
+  id          String  @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  description String?
+  icon        String? // Icon name or URL
+  order       Int     @default(0)
+  skills      Skill[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Skill {
+  id           String        @id @default(auto()) @map("_id") @db.ObjectId
+  name         String
+  proficiency  Int           // 1-100 scale
+  icon         String?       // Icon name or URL
+  color        String?       // Color for the skill badge/chart
+  featured     Boolean       @default(false)
+  categoryId   String        @db.ObjectId
+  category     SkillCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  projectIds   String[]      @db.ObjectId
+  projects     Project[]     @relation(fields: [projectIds], references: [id])
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+// Projects
+model Project {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  title         String
+  slug          String    @unique
+  description   String    
+  content       String?   
+  featured      Boolean   @default(false)
+  publishedAt   DateTime? 
+  githubUrl     String?
+  liveUrl       String?
+  coverImage    String?   // URL to the cover image
+  order         Int       @default(0)
+  userId        String    @db.ObjectId
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skillIds      String[]  @db.ObjectId
+  skills        Skill[]   @relation(fields: [skillIds], references: [id])
+  gallery       MediaItem[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+// Work Experience
+model Experience {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  title       String    // Job title
+  company     String    // Company name
+  location    String?   // Location
+  description String    
+  startDate   DateTime
+  endDate     DateTime?
+  current     Boolean   @default(false)
+  logo        String?   // URL to company logo
+  order       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+// Education History
+model Education {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  institution String    // School/University name
+  degree      String    // Degree or certification
+  field       String    // Field of study
+  location    String?
+  description String?   
+  startDate   DateTime
+  endDate     DateTime?
+  current     Boolean   @default(false)
+  logo        String?   // URL to institution logo
+  order       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+// Testimonials/Recommendations
+model Testimonial {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  name       String   // Name of the person giving testimonial
+  role       String?  // Their professional role
+  company    String?  // Their company
+  content    String   
+  avatar     String?  // URL to avatar image
+  rating     Int?     // Optional rating (1-5)
+  featured   Boolean  @default(false)
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+// Blog Posts
+model BlogPost {
+  id          String             @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  slug        String             @unique
+  summary     String?     
+  content     String             // Markdown content
+  coverImage  String?            // URL to cover image
+  status      BlogStatus         @default(DRAFT)
+  publishedAt DateTime?
+  featured    Boolean            @default(false)
+  userId      String             @db.ObjectId
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tagIds      String[]           @db.ObjectId
+  tags        BlogTag[]          @relation(fields: [tagIds], references: [id])
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+}
+
+enum BlogStatus {
+  DRAFT
+  PUBLISHED
+  UNLISTED
+  ARCHIVED
+}
+
+model BlogTag {
+  id         String     @id @default(auto()) @map("_id") @db.ObjectId
+  name       String     @unique
+  slug       String     @unique
+  postIds    String[]   @db.ObjectId
+  posts      BlogPost[] @relation(fields: [postIds], references: [id])
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+}
+
+// Media Gallery (Images/Videos)
+model MediaItem {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  title       String?
+  description String?  
+  type        MediaType
+  url         String   // URL to the media file
+  thumbnail   String?  // URL to thumbnail if applicable
+  altText     String?
+  projectId   String?  @db.ObjectId
+  project     Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  userId      String   @db.ObjectId
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  featured    Boolean  @default(false)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+  DOCUMENT
+  OTHER
+}
+
+// Contact Form Messages
+model ContactMessage {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  email     String
+  subject   String?
+  message   String   
+  read      Boolean  @default(false)
+  replied   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Site Settings
+model SiteSetting {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  key       String   @unique // e.g. "site_name", "theme_primary_color"
+  value     String    // Could be text, JSON, etc.
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Analytics (page views, etc)
+model Analytics {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  pageUrl    String
+  eventType  String   // e.g. "page_view", "click", "download"
+  eventData  Json?    // Additional data about the event
+  userAgent  String?
+  ipAddress  String?
+  referer    String?
+  createdAt  DateTime @default(now())
+}

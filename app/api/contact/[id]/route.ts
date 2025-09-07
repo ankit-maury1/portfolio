@@ -1,0 +1,94 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@/auth';
+import { getContactMessageById, markContactMessageAsRead, markContactMessageAsReplied, deleteContactMessage } from '@/lib/contact-messages';
+
+// GET - Get a specific contact message by ID
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await auth();
+    
+    if (!session?.user || session.user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const message = await getContactMessageById(params.id);
+
+    if (!message) {
+      return NextResponse.json({ error: 'Message not found' }, { status: 404 });
+    }
+
+    return NextResponse.json(message);
+  } catch (error) {
+    console.error('Error fetching contact message:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+// PATCH - Update contact message (mark as read/replied)
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await auth();
+    
+    if (!session?.user || session.user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { read, replied } = body;
+    
+    let success = false;
+    
+    // Update read status if provided
+    if (typeof read === 'boolean') {
+      success = await markContactMessageAsRead(params.id, read);
+    }
+    
+    // Update replied status if provided
+    if (typeof replied === 'boolean') {
+      success = await markContactMessageAsReplied(params.id, replied);
+    }
+    
+    if (!success) {
+      return NextResponse.json({ error: 'Failed to update message' }, { status: 500 });
+    }
+    
+    // Get updated message
+    const message = await getContactMessageById(params.id);
+    
+    return NextResponse.json(message);
+  } catch (error) {
+    console.error('Error updating contact message:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+// DELETE - Delete a contact message
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await auth();
+    
+    if (!session?.user || session.user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const success = await deleteContactMessage(params.id);
+    
+    if (!success) {
+      return NextResponse.json({ error: 'Failed to delete message' }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, message: 'Contact message deleted' });
+  } catch (error) {
+    console.error('Error deleting contact message:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}

@@ -1,8 +1,26 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Portfolio Website
+
+This is a personal portfolio website built with Next.js, TypeScript, and MongoDB.
 
 ## Getting Started
 
-First, run the development server:
+First, make sure you have MongoDB set up. This project uses MongoDB Atlas. Add your MongoDB URI to the `.env` file:
+
+```bash
+MONGODB_URI=mongodb+srv://username:password@cluster0.example.mongodb.net/?retryWrites=true&w=majority
+```
+
+Then, seed the MongoDB database with initial data:
+
+```bash
+# On Windows
+.\seed-mongodb.ps1
+
+# On Linux/Mac
+MONGODB_URI=your_mongodb_uri node scripts/seed-mongodb.js
+```
+
+Finally, run the development server:
 
 ```bash
 npm run dev

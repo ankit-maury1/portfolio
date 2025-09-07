@@ -1,0 +1,68 @@
+/* Global animations for header and footer */
+
+/* Neon glow animation for text and borders */
+@keyframes neon-pulse {
+  0%, 100% {
+    text-shadow: 0 0 5px rgba(4, 217, 255, 0.6), 0 0 10px rgba(4, 217, 255, 0.4);
+  }
+  50% {
+    text-shadow: 0 0 20px rgba(4, 217, 255, 0.8), 0 0 30px rgba(4, 217, 255, 0.6);
+  }
+}
+
+.neon-text {
+  text-shadow: 0 0 5px rgba(4, 217, 255, 0.6), 0 0 10px rgba(4, 217, 255, 0.4);
+}
+
+.neon-text:hover {
+  animation: neon-pulse 2s ease-in-out infinite;
+}
+
+/* Neon border for buttons */
+.neon-border {
+  border: 1px solid rgba(4, 217, 255, 0.3);
+  box-shadow: 0 0 5px rgba(4, 217, 255, 0.2);
+}
+
+.neon-border:hover {
+  border-color: rgba(4, 217, 255, 0.6);
+  box-shadow: 0 0 10px rgba(4, 217, 255, 0.4);
+}
+
+/* Glass effect for header and footer */
+.glass-dark {
+  background: rgba(10, 10, 15, 0.8);
+  backdrop-filter: blur(10px);
+  border-color: rgba(4, 217, 255, 0.1);
+}
+
+/* Header scroll transition */
+.header-scroll-transition {
+  transition: all 0.3s ease;
+}
+
+/* Social icon hover effects */
+.social-icon {
+  transition: all 0.3s ease;
+}
+
+.social-icon:hover {
+  transform: translateY(-3px);
+  color: var(--color-primary);
+}
+
+/* Mobile nav slide animation */
+@keyframes slide-in {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.slide-in {
+  animation: slide-in 0.3s forwards;
+}
