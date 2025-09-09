@@ -459,7 +459,7 @@ export default function ContactPage() {
           </div>
           
           {/* Google Map or Location */}
-          <motion.div 
+          {/* <motion.div 
             className="mt-16 rounded-xl overflow-hidden h-80 bg-gray-800"
             initial={{ opacity: 0, y: 30 }}
             animate={sectionInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
@@ -471,7 +471,7 @@ export default function ContactPage() {
                 <p className="text-gray-200 font-medium">San Francisco, CA</p>
               </div>
             </div>
-          </motion.div>
+          </motion.div> */}
         </div>
       </motion.section>
     </main>
