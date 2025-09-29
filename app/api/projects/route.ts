@@ -26,6 +26,8 @@ export async function GET() {
     const formattedProjects = projects.map(project => ({
       ...project,
       id: project._id.toString(),
+      status: project.status || 'planned',
+      category: project.category || 'general',
       skills: project.skills.map((skill: any) => ({
         ...skill,
         id: skill._id.toString(),
@@ -62,6 +64,8 @@ export async function POST(request: Request) {
       githubUrl,
       liveUrl,
       coverImage,
+      status, // new optional field
+      category, // new optional field
       skills: skillIds,
     } = body;
 
@@ -76,15 +80,26 @@ export async function POST(request: Request) {
 
     const db = await getDatabase();
     
+    // Normalize URL fields (prepend https:// if user omitted protocol)
+    const normalizeUrl = (val?: string) => {
+      if (!val) return undefined;
+      const trimmed = val.trim();
+      if (!trimmed) return undefined;
+      if (/^https?:\/\//i.test(trimmed)) return trimmed;
+      return `https://${trimmed}`;
+    };
+
     const newProject = {
       title,
       slug,
       description,
       content,
       featured: featured || false,
-      githubUrl,
-      liveUrl,
+      githubUrl: normalizeUrl(githubUrl),
+      liveUrl: normalizeUrl(liveUrl),
       coverImage,
+      status: status || 'planned',
+      category: category || 'general',
       publishedAt: new Date(),
       userId: new ObjectId(session.user.id),
       skillIds: skillObjectIds,

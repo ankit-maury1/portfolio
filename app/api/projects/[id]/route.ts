@@ -1,7 +1,59 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { ObjectId } from 'mongodb';
+import { ObjectId, WithId } from 'mongodb';
 import { getDatabase } from '@/lib/mongodb-helpers';
+import { trackDetailedActivity } from '@/lib/activity-tracking';
+import type { MongoProject, MongoSkill } from '@/types/mongodb';
+
+// Local helper types (formatted versions returned to client)
+interface ApiSkill extends Omit<MongoSkill, '_id' | 'projectIds' | 'categoryId' | 'createdAt' | 'updatedAt'> {
+  id: string;
+  categoryId?: string; // optionally expose if needed later
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+interface ApiProject extends Omit<MongoProject, '_id' | 'userId' | 'skillIds' | 'createdAt' | 'updatedAt'> {
+  id: string;
+  skillIds: string[]; // still return referenced ids
+  skills: ApiSkill[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+function mapSkill(doc: WithId<Partial<MongoSkill>>): ApiSkill {
+  return {
+    id: doc._id.toString(),
+    name: doc.name || '',
+    proficiency: doc.proficiency ?? 0,
+    icon: doc.icon,
+    color: doc.color,
+    featured: !!doc.featured,
+  };
+}
+
+function mapProjectWithSkills(project: WithId<MongoProject & { skills: WithId<MongoSkill>[] }>): ApiProject {
+  return {
+    id: project._id.toString(),
+    title: project.title,
+    slug: project.slug,
+    description: project.description,
+    content: project.content,
+    featured: project.featured,
+    publishedAt: project.publishedAt,
+    githubUrl: project.githubUrl,
+    liveUrl: project.liveUrl,
+    coverImage: project.coverImage,
+    order: project.order,
+    skillIds: project.skillIds.map(id => id.toString()),
+    gallery: project.gallery,
+    status: project.status,
+    category: project.category,
+    createdAt: project.createdAt?.toISOString(),
+    updatedAt: project.updatedAt?.toISOString(),
+    skills: (project.skills || []).map(mapSkill)
+  };
+}
 
 export async function GET(
   request: Request,
@@ -11,7 +63,7 @@ export async function GET(
     const db = await getDatabase();
 
     // Using MongoDB aggregation to join project with skills
-    const projects = await db.collection('Project').aggregate([
+    const projects = await db.collection('Project').aggregate<WithId<MongoProject & { skills: WithId<MongoSkill>[] }>>([
       {
         $match: { _id: new ObjectId(params.id) }
       },
@@ -30,20 +82,7 @@ export async function GET(
     }
 
     const project = projects[0];
-
-    // Transform the results to match the expected format
-    const formattedProject = {
-      ...project,
-      id: project._id.toString(),
-      skills: project.skills.map((skill: any) => ({
-        ...skill,
-        id: skill._id.toString(),
-        _id: undefined
-      })),
-      _id: undefined
-    };
-
-    return NextResponse.json(formattedProject);
+    return NextResponse.json(mapProjectWithSkills(project));
   } catch (error) {
     console.error('Error fetching project:', error);
     return NextResponse.json({ error: 'Failed to fetch project' }, { status: 500 });
@@ -71,6 +110,8 @@ export async function PUT(
       githubUrl,
       liveUrl,
       coverImage,
+      status,
+      category,
       skills: skillIds,
     } = body;
 
@@ -95,7 +136,7 @@ export async function PUT(
     }
 
     // Convert new skill IDs to ObjectIds
-    const newSkillObjectIds = skillIds?.map((id: string) => new ObjectId(id)) || [];
+  const newSkillObjectIds = Array.isArray(skillIds) ? skillIds.map((id: string) => new ObjectId(id)) : [];
     
     // Remove this project from skills that are no longer associated
     if (currentProject.skillIds?.length > 0) {
@@ -129,18 +170,28 @@ export async function PUT(
     }
 
     // Update the project
-    const updateData = {
-      title,
-      slug,
-      description,
-      content,
-      featured,
-      githubUrl,
-      liveUrl,
-      coverImage,
-      skillIds: newSkillObjectIds,
-      updatedAt: new Date()
+    const normalizeUrl = (val?: string) => {
+      if (!val) return undefined;
+      const trimmed = val.trim();
+      if (!trimmed) return undefined;
+      if (/^https?:\/\//i.test(trimmed)) return trimmed;
+      return `https://${trimmed}`;
     };
+
+    const updateData: Partial<MongoProject> & { updatedAt: Date; skillIds: ObjectId[] } = {
+      updatedAt: new Date(),
+      skillIds: newSkillObjectIds
+    } as const;
+    if (title !== undefined) (updateData as any).title = title;
+    if (slug !== undefined) (updateData as any).slug = slug;
+    if (description !== undefined) (updateData as any).description = description;
+    if (content !== undefined) (updateData as any).content = content;
+    if (featured !== undefined) (updateData as any).featured = featured;
+    if (githubUrl !== undefined) (updateData as any).githubUrl = normalizeUrl(githubUrl);
+    if (liveUrl !== undefined) (updateData as any).liveUrl = normalizeUrl(liveUrl);
+    if (coverImage !== undefined) (updateData as any).coverImage = coverImage;
+    if (status !== undefined) (updateData as any).status = status;
+    if (category !== undefined) (updateData as any).category = category;
 
     await db.collection('Project').updateOne(
       { _id: new ObjectId(params.id) },
@@ -148,7 +199,7 @@ export async function PUT(
     );
 
     // Fetch updated project with skills
-    const updatedProjects = await db.collection('Project').aggregate([
+    const updatedProjects = await db.collection('Project').aggregate<WithId<MongoProject & { skills: WithId<MongoSkill>[] }>>([
       {
         $match: { _id: new ObjectId(params.id) }
       },
@@ -164,16 +215,21 @@ export async function PUT(
 
     const updatedProject = updatedProjects[0];
 
-    const formattedProject = {
-      ...updatedProject,
-      id: updatedProject._id.toString(),
-      skills: updatedProject.skills.map((skill: any) => ({
-        ...skill,
-        id: skill._id.toString(),
-        _id: undefined
-      })),
-      _id: undefined
-    };
+    const formattedProject = mapProjectWithSkills(updatedProject);
+
+    // Track update activity
+    try {
+      await trackDetailedActivity(
+        'project',
+        formattedProject.title || 'Project',
+        'update',
+        `Updated project: ${formattedProject.title}`,
+        `/admin/projects`,
+        session.user.name || 'Admin'
+      );
+    } catch (err) {
+      console.error('Failed to log project update activity', err);
+    }
 
     return NextResponse.json(formattedProject);
   } catch (error) {
@@ -216,6 +272,20 @@ export async function DELETE(
     await db.collection('Project').deleteOne({ 
       _id: new ObjectId(params.id) 
     });
+
+    // Track delete activity
+    try {
+      await trackDetailedActivity(
+        'project',
+        project.title || 'Project',
+        'delete',
+        `Deleted project: ${project.title}`,
+        `/admin/projects`,
+        session.user.name || 'Admin'
+      );
+    } catch (err) {
+      console.error('Failed to log project delete activity', err);
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

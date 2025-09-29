@@ -90,6 +90,8 @@ export default function SkillsManagement() {
   const [isEditSkillDialogOpen, setIsEditSkillDialogOpen] = useState(false);
   const [isDeleteSkillDialogOpen, setIsDeleteSkillDialogOpen] = useState(false);
   const [isAddCategoryDialogOpen, setIsAddCategoryDialogOpen] = useState(false);
+  const [isEditCategoryDialogOpen, setIsEditCategoryDialogOpen] = useState(false);
+  const [isDeleteCategoryDialogOpen, setIsDeleteCategoryDialogOpen] = useState(false);
   
   const [currentSkill, setCurrentSkill] = useState<Skill | null>(null);
   const [currentCategory, setCurrentCategory] = useState<SkillCategory | null>(null);
@@ -291,6 +293,92 @@ export default function SkillsManagement() {
       });
     }
   };
+
+  // Edit category
+  const handleEditCategory = async () => {
+    if (!currentCategory) return;
+    try {
+      const response = await fetch('/api/skill-categories', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: currentCategory.id,
+          name: currentCategory.name,
+          description: currentCategory.description,
+          icon: currentCategory.icon,
+          order: currentCategory.order
+        })
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to update category');
+      }
+
+      const updated = await response.json();
+      setCategories(categories.map(c => c.id === updated.id ? { ...c, ...updated } : c));
+      setIsEditCategoryDialogOpen(false);
+      toast({ title: 'Success', description: `Category "${updated.name}" updated.` });
+    } catch (error: any) {
+      console.error('Error updating category:', error);
+      toast({ title: 'Error', description: error.message || 'Failed to update category', variant: 'destructive' });
+    }
+  };
+
+  // Delete category
+  const handleDeleteCategory = async () => {
+    if (!currentCategory) return;
+    try {
+      const response = await fetch('/api/skill-categories', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: currentCategory.id })
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to delete category');
+      }
+
+      setCategories(categories.filter(c => c.id !== currentCategory.id));
+      setIsDeleteCategoryDialogOpen(false);
+      toast({ title: 'Success', description: `Category deleted.` });
+    } catch (error: any) {
+      console.error('Error deleting category:', error);
+      toast({ title: 'Error', description: error.message || 'Failed to delete category', variant: 'destructive' });
+    }
+  };
+
+  // Move category order up/down
+  const moveCategory = async (categoryId: string, direction: 'up' | 'down') => {
+    const idx = categories.findIndex(c => c.id === categoryId);
+    if (idx === -1) return;
+    const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= categories.length) return;
+
+    const updatedCategories = [...categories];
+    // swap order values
+    const tempOrder = updatedCategories[idx].order;
+    updatedCategories[idx].order = updatedCategories[swapIdx].order;
+    updatedCategories[swapIdx].order = tempOrder;
+
+    // Optimistically update UI
+    setCategories(updatedCategories);
+
+    // Persist both categories' order
+    try {
+      await Promise.all([
+        fetch('/api/skill-categories', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: updatedCategories[idx].id, order: updatedCategories[idx].order }) }),
+        fetch('/api/skill-categories', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: updatedCategories[swapIdx].id, order: updatedCategories[swapIdx].order }) })
+      ]);
+      toast({ title: 'Success', description: 'Category order updated.' });
+    } catch (err) {
+      console.error('Failed to update category order:', err);
+      toast({ title: 'Error', description: 'Failed to persist category order', variant: 'destructive' });
+      // revert on failure (simple reload)
+      setCategories(categories);
+    }
+  };
   
   const resetNewSkill = () => {
     setNewSkill({
@@ -434,23 +522,7 @@ export default function SkillsManagement() {
                   />
                 </div>
                 
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="skill-level" className="text-right text-white">
-                    Level (1-100)
-                  </Label>
-                  <div className="col-span-3 flex items-center gap-4">
-                    <Input
-                      id="skill-level"
-                      type="range"
-                      min="1"
-                      max="100"
-                      className="flex-1 bg-gray-800 accent-cyan-500"
-                      value={newSkill.level}
-                      onChange={(e) => setNewSkill({...newSkill, level: parseInt(e.target.value)})}
-                    />
-                    <span className="text-white">{newSkill.level}%</span>
-                  </div>
-                </div>
+                {/* Level removed - proficiency is stored but not editable in the UI */}
                 
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="skill-category" className="text-right text-white">
@@ -560,13 +632,18 @@ export default function SkillsManagement() {
                   </div>
                 </div>
                 <div className="flex space-x-1">
-                  <Button variant="ghost" size="icon" className="h-6 w-6 text-gray-400 hover:text-white">
-                    <GripVertical className="h-4 w-4" />
+                  <Button variant="ghost" size="icon" className="h-6 w-6 text-gray-400 hover:text-white" onClick={() => moveCategory(category.id, 'up')}>
+                    ▲
                   </Button>
-                  <Button variant="ghost" size="icon" className="h-6 w-6 text-cyan-400 hover:text-cyan-300">
+                  <Button variant="ghost" size="icon" className="h-6 w-6 text-gray-400 hover:text-white" onClick={() => moveCategory(category.id, 'down')}>
+                    ▼
+                  </Button>
+
+                  <Button variant="ghost" size="icon" className="h-6 w-6 text-cyan-400 hover:text-cyan-300" onClick={() => { setCurrentCategory(category); setIsEditCategoryDialogOpen(true); }}>
                     <Pencil className="h-3 w-3" />
                   </Button>
-                  <Button variant="ghost" size="icon" className="h-6 w-6 text-red-400 hover:text-red-300">
+
+                  <Button variant="ghost" size="icon" className="h-6 w-6 text-red-400 hover:text-red-300" onClick={() => { setCurrentCategory(category); setIsDeleteCategoryDialogOpen(true); }}>
                     <Trash2 className="h-3 w-3" />
                   </Button>
                 </div>
@@ -576,6 +653,58 @@ export default function SkillsManagement() {
         </div>
         )}
       </div>
+
+      {/* Edit Category Dialog */}
+      <Dialog open={isEditCategoryDialogOpen} onOpenChange={setIsEditCategoryDialogOpen}>
+        <DialogContent className="sm:max-w-[500px] bg-gray-900 border border-cyan-500/30">
+          <DialogHeader>
+            <DialogTitle className="text-white">Edit Category</DialogTitle>
+            <DialogDescription>Update category details.</DialogDescription>
+          </DialogHeader>
+          {currentCategory && (
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-category-name" className="text-right text-white">Name</Label>
+                <Input id="edit-category-name" className="col-span-3 bg-gray-800 border-gray-700 text-white" value={currentCategory.name} onChange={(e) => setCurrentCategory({...currentCategory, name: e.target.value})} />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-category-desc" className="text-right text-white">Description</Label>
+                <Textarea id="edit-category-desc" className="col-span-3 bg-gray-800 border-gray-700 text-white" value={currentCategory.description} onChange={(e) => setCurrentCategory({...currentCategory, description: e.target.value})} />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-category-icon" className="text-right text-white">Icon</Label>
+                <Input id="edit-category-icon" className="col-span-3 bg-gray-800 border-gray-700 text-white" value={currentCategory.icon || ''} onChange={(e) => setCurrentCategory({...currentCategory, icon: e.target.value})} />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditCategoryDialogOpen(false)} className="border-gray-700 text-white hover:bg-gray-800">Cancel</Button>
+            <Button onClick={handleEditCategory} className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600">Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Category Dialog */}
+      <Dialog open={isDeleteCategoryDialogOpen} onOpenChange={setIsDeleteCategoryDialogOpen}>
+        <DialogContent className="sm:max-w-[400px] bg-gray-900 border border-red-500/30">
+          <DialogHeader>
+            <DialogTitle className="text-white">Delete Category</DialogTitle>
+            <DialogDescription>Are you sure you want to delete this category? This action cannot be undone.</DialogDescription>
+          </DialogHeader>
+          {currentCategory && (
+            <div className="py-4">
+              <div className="p-4 rounded-lg bg-red-900/10 border border-red-500/30">
+                <h4 className="text-white font-medium">{currentCategory.name}</h4>
+                <p className="text-gray-400 text-sm mt-1">{currentCategory.description}</p>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteCategoryDialogOpen(false)} className="border-gray-700 text-white hover:bg-gray-800">Cancel</Button>
+            <Button onClick={handleDeleteCategory} className="bg-red-500 hover:bg-red-600 text-white">Delete Category</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       
       {/* Skills Section */}
       <div>
@@ -603,7 +732,6 @@ export default function SkillsManagement() {
               <thead>
                 <tr className="border-b border-gray-700">
                   <th className="text-left py-3 px-4 text-gray-400">Name</th>
-                  <th className="text-left py-3 px-4 text-gray-400">Level</th>
                   <th className="text-left py-3 px-4 text-gray-400">Category</th>
                   <th className="text-left py-3 px-4 text-gray-400">Featured</th>
                   <th className="text-left py-3 px-4 text-gray-400">Actions</th>
@@ -624,17 +752,6 @@ export default function SkillsManagement() {
                         <span className="text-lg">{skill.icon.includes('/') ? '🔗' : skill.icon}</span>
                       )}
                       <span className="text-white">{skill.name}</span>
-                    </div>
-                  </td>
-                  <td className="py-3 px-4">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-24 h-2 bg-gray-700 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-gradient-to-r from-cyan-500 to-blue-500"
-                          style={{ width: `${skill.level}%` }}
-                        />
-                      </div>
-                      <span className="text-gray-400 text-xs">{skill.level}%</span>
                     </div>
                   </td>
                   <td className="py-3 px-4 text-gray-300">
@@ -686,23 +803,7 @@ export default function SkillsManagement() {
                                 />
                               </div>
                               
-                              <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="edit-skill-level" className="text-right text-white">
-                                  Level (1-100)
-                                </Label>
-                                <div className="col-span-3 flex items-center gap-4">
-                                  <Input
-                                    id="edit-skill-level"
-                                    type="range"
-                                    min="1"
-                                    max="100"
-                                    className="flex-1 bg-gray-800 accent-cyan-500"
-                                    value={currentSkill.level}
-                                    onChange={(e) => setCurrentSkill({...currentSkill, level: parseInt(e.target.value)})}
-                                  />
-                                  <span className="text-white">{currentSkill.level}%</span>
-                                </div>
-                              </div>
+                              {/* Level removed from edit dialog - not editable here */}
                               
                               <div className="grid grid-cols-4 items-center gap-4">
                                 <Label htmlFor="edit-skill-category" className="text-right text-white">

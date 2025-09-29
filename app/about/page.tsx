@@ -38,6 +38,10 @@ export default function AboutPage() {
     technologies: ''
   });
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+
+  // Featured skills state (from admin skills)
+  const [featuredSkills, setFeaturedSkills] = useState<{ id: string; name: string }[]>([]);
+  const [isLoadingSkills, setIsLoadingSkills] = useState(true);
   
   // Fetch profile data
   useEffect(() => {
@@ -91,6 +95,28 @@ export default function AboutPage() {
     };
     
     fetchProfile();
+  }, []);
+
+  // Fetch featured skills for About page
+  useEffect(() => {
+    const fetchFeaturedSkills = async () => {
+      setIsLoadingSkills(true);
+      try {
+        const res = await fetch('/api/skills');
+        if (!res.ok) throw new Error('Failed to fetch skills');
+        const data = await res.json();
+        const featured = (data || [])
+          .filter((s: any) => s.featured)
+          .map((s: any) => ({ id: s.id || s._id, name: s.name }));
+        setFeaturedSkills(featured);
+      } catch (err) {
+        console.error('Error fetching featured skills:', err);
+      } finally {
+        setIsLoadingSkills(false);
+      }
+    };
+
+    fetchFeaturedSkills();
   }, []);
   
   return (
@@ -212,66 +238,58 @@ export default function AboutPage() {
                 <p className="text-gray-300 mb-4">
                   My primary toolkit includes:
                 </p>
-                {isLoadingProfile ? (
-                  <div className="flex justify-center py-8">
-                    <div className="w-8 h-8 border-4 border-t-blue-500 border-r-blue-500 border-b-transparent border-l-transparent rounded-full animate-spin"></div>
+                {/* Featured skills from admin */}
+                {isLoadingSkills ? (
+                  <div className="flex justify-center py-4">
+                    <div className="w-6 h-6 border-4 border-t-blue-500 border-r-blue-500 border-b-transparent border-l-transparent rounded-full animate-spin"></div>
                   </div>
-                ) : profile.technologies ? (
-                  <div className="flex flex-wrap gap-2">
-                    {profile.technologies.split(',').map((tech, index) => (
-                      <span 
-                        key={index}
-                        className={`px-3 py-1.5 rounded-full text-sm font-medium ${
-                          index % 4 === 0 ? 'bg-cyan-900/50 text-cyan-300' : 
-                          index % 4 === 1 ? 'bg-purple-900/50 text-purple-300' : 
-                          index % 4 === 2 ? 'bg-blue-900/50 text-blue-300' : 
-                          'bg-pink-900/50 text-pink-300'
-                        }`}
-                      >
-                        {tech.trim()}
+                ) : featuredSkills.length > 0 ? (
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {featuredSkills.map((skill) => (
+                      <span key={skill.id} className="px-3 py-1.5 rounded-full bg-cyan-900/50 text-cyan-300 text-sm font-medium">
+                        {skill.name}
                       </span>
                     ))}
                   </div>
-                ) : (
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="rounded-lg bg-gray-900/70 p-4">
-                      <h3 className="text-lg font-medium text-cyan-400 mb-2">Frontend</h3>
-                      <ul className="text-gray-300 space-y-1">
-                        <li>React & Next.js</li>
-                        <li>TypeScript</li>
-                        <li>Tailwind CSS</li>
-                        <li>Framer Motion</li>
-                      </ul>
-                    </div>
-                    <div className="rounded-lg bg-gray-900/70 p-4">
-                      <h3 className="text-lg font-medium text-purple-400 mb-2">Backend</h3>
-                      <ul className="text-gray-300 space-y-1">
-                        <li>Node.js</li>
-                        <li>Express</li>
-                        <li>MongoDB</li>
-                        <li>PostgreSQL</li>
-                      </ul>
-                    </div>
-                    <div className="rounded-lg bg-gray-900/70 p-4">
-                      <h3 className="text-lg font-medium text-blue-400 mb-2">Tools</h3>
-                      <ul className="text-gray-300 space-y-1">
-                        <li>Git & GitHub</li>
-                        <li>Docker</li>
-                        <li>VS Code</li>
-                        <li>Figma</li>
-                      </ul>
-                    </div>
-                    <div className="rounded-lg bg-gray-900/70 p-4">
-                      <h3 className="text-lg font-medium text-pink-400 mb-2">Other</h3>
-                      <ul className="text-gray-300 space-y-1">
-                        <li>CI/CD</li>
-                        <li>Serverless</li>
-                        <li>AWS & Vercel</li>
-                        <li>Testing (Jest, Cypress)</li>
-                      </ul>
-                    </div>
+                ) : null}
+
+                {/* Helper to derive list of technologies; treat a purely numeric value as 'no list yet' */}
+                {(() => {
+                  const raw = profile.technologies?.trim();
+                  const techList = raw && /[a-zA-Z]/.test(raw) ? raw.split(',').map(t => t.trim()).filter(Boolean) : [];
+                  if (isLoadingProfile) {
+                    return (
+                  <div className="flex justify-center py-8">
+                    <div className="w-8 h-8 border-4 border-t-blue-500 border-r-blue-500 border-b-transparent border-l-transparent rounded-full animate-spin"></div>
                   </div>
-                )}
+                    );
+                  }
+                  if (techList.length > 0) {
+                    return (
+                      <div className="flex flex-wrap gap-2">
+                        {techList.map((tech, index) => (
+                          <span
+                            key={index}
+                            className={`px-3 py-1.5 rounded-full text-sm font-medium ${
+                              index % 4 === 0 ? 'bg-cyan-900/50 text-cyan-300' :
+                              index % 4 === 1 ? 'bg-purple-900/50 text-purple-300' :
+                              index % 4 === 2 ? 'bg-blue-900/50 text-blue-300' :
+                              'bg-pink-900/50 text-pink-300'
+                            }`}
+                          >
+                            {tech}
+                          </span>
+                        ))}
+                      </div>
+                    );
+                  }
+                  // no technologies configured yet
+                  // return (
+                  //   <div className="p-4 rounded-lg border border-dashed border-blue-500/30 bg-blue-950/10 text-sm text-gray-400">
+                  //     No technologies configured yet. Add a comma separated list in the Admin Profile page to display your stack here.
+                  //   </div>
+                  // );
+                })()}
               </div>
 
               <div className="rounded-xl border border-pink-500/30 bg-black/50 backdrop-blur-sm p-6">

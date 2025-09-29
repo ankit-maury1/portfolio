@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { ObjectId } from 'mongodb';
 import { findById, getDatabase } from '@/lib/mongodb-helpers';
+import { trackDetailedActivity } from '@/lib/activity-tracking';
 
 export async function GET(
   request: Request,
@@ -77,11 +78,28 @@ export async function PUT(
       return NextResponse.json({ error: 'Education record not found' }, { status: 404 });
     }
 
-    return NextResponse.json({
-      ...result,
-      id: result._id.toString(),
+    const updated: any = (result as any)?.value || result;
+
+    const responsePayload = {
+      ...updated,
+      id: updated._id.toString(),
       _id: undefined
-    });
+    };
+
+    try {
+      await trackDetailedActivity(
+        'education',
+        `${updated.degree || degree} - ${updated.institution || institution}`,
+        'update',
+        `Updated education: ${updated.degree || degree} at ${updated.institution || institution}`,
+        '/admin/education',
+        session.user.name || 'Admin'
+      );
+    } catch (err) {
+      console.error('Failed to log education update activity', err);
+    }
+
+    return NextResponse.json(responsePayload);
   } catch (error) {
     console.error('Error updating education record:', error);
     return NextResponse.json({ error: 'Failed to update education record' }, { status: 500 });
@@ -100,12 +118,26 @@ export async function DELETE(
     }
 
     const db = await getDatabase();
-    const result = await db.collection('Education').deleteOne({
-      _id: new ObjectId(params.id)
-    });
+    const existing = await db.collection('Education').findOne({ _id: new ObjectId(params.id) });
+    const result = await db.collection('Education').deleteOne({ _id: new ObjectId(params.id) });
 
     if (result.deletedCount === 0) {
       return NextResponse.json({ error: 'Education record not found' }, { status: 404 });
+    }
+
+    try {
+      if (existing) {
+        await trackDetailedActivity(
+          'education',
+          `${existing.degree || 'Education'} - ${existing.institution || ''}`,
+          'delete',
+          `Deleted education: ${existing.degree} at ${existing.institution}`,
+          '/admin/education',
+          session.user.name || 'Admin'
+        );
+      }
+    } catch (err) {
+      console.error('Failed to log education delete activity', err);
     }
 
     return NextResponse.json({ success: true });

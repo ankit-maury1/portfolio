@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { getAllContactMessages, createContactMessage } from '@/lib/contact-messages';
+import { trackDetailedActivity } from '@/lib/activity-tracking';
 
 // GET - Fetch all contact messages (admin only)
 export async function GET(request: NextRequest) {
@@ -53,11 +54,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to create contact message' }, { status: 500 });
     }
 
-    return NextResponse.json({ 
-      success: true, 
-      message: 'Contact message submitted successfully',
-      id: contactMessage._id
-    });
+    try {
+      await trackDetailedActivity(
+        'contact',
+        subject,
+        'create',
+        `New contact message from ${name}: ${subject}`,
+        '/admin/contact',
+        name
+      );
+    } catch (err) {
+      console.error('Failed to log contact message create activity', err);
+    }
+
+    return NextResponse.json({ success: true, message: 'Contact message submitted successfully', id: contactMessage._id });
   } catch (error) {
     console.error('Error submitting contact message:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

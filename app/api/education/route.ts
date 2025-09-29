@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { findMany, insertOne } from '@/lib/mongodb-helpers';
+import { trackDetailedActivity } from '@/lib/activity-tracking';
 
 export async function GET() {
   try {
@@ -56,6 +57,19 @@ export async function POST(request: Request) {
     };
 
     const result = await insertOne('Education', newEducation);
+
+    try {
+      await trackDetailedActivity(
+        'education',
+        `${degree} - ${institution}`,
+        'create',
+        `Added education: ${degree} at ${institution}`,
+        '/admin/education',
+        session.user.name || 'Admin'
+      );
+    } catch (err) {
+      console.error('Failed to log education create activity', err);
+    }
     
     return NextResponse.json({
       ...newEducation,

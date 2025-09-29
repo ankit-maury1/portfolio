@@ -22,7 +22,6 @@ interface Skill {
   name: string;
   icon?: string;
   color?: string;
-  proficiency: number;
   featured: boolean;
   category: {
     id: string;
@@ -131,19 +130,28 @@ export default function SkillsPage() {
         }
         const skillsData = await skillsResponse.json();
         setSkills(skillsData);
-        
-        // Fetch skill categories
-        const categoriesResponse = await fetch('/api/skill-categories');
-        if (!categoriesResponse.ok) {
-          throw new Error('Failed to fetch skill categories');
+
+        // Derive categories directly from skills to ensure filters match available skills
+        const derivedMap = new Map<string, SkillCategory>();
+        for (const s of skillsData) {
+          if (s.category && s.category.id && s.category.name) {
+            const id = String(s.category.id).trim();
+            const name = String(s.category.name).trim();
+            if (name) {
+              // prefer first occurrence
+              if (!derivedMap.has(id)) {
+                derivedMap.set(id, { id, name, icon: s.category.icon });
+              }
+            }
+          }
         }
-        const categoriesData = await categoriesResponse.json();
-        setCategories(categoriesData);
-        
-        // Set the first category as active if there are categories
-        if (categoriesData.length > 0) {
-          setActiveCategory(categoriesData[0].id);
-        }
+
+        const derivedCategories = Array.from(derivedMap.values());
+
+        setCategories(derivedCategories);
+
+        // Default to 'All Skills' (null) so users see everything initially
+        setActiveCategory(null);
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -159,14 +167,7 @@ export default function SkillsPage() {
     ? skills.filter(skill => skill.category && skill.category.id === activeCategory)
     : skills;
   
-  // Get proficiency color based on level
-  const getProficiencyColor = (level: number) => {
-    if (level >= 90) return 'bg-green-500';
-    if (level >= 75) return 'bg-emerald-500';
-    if (level >= 60) return 'bg-blue-500';
-    if (level >= 40) return 'bg-yellow-500';
-    return 'bg-orange-500';
-  };
+  // Proficiency removed per requirements
   
   return (
     <main className="relative min-h-screen pt-16 pb-24">
@@ -237,18 +238,7 @@ export default function SkillsPage() {
                         <h3 className="text-xl font-semibold text-white">{skill.name}</h3>
                       </div>
                       
-                      <div className="mb-3">
-                        <div className="flex justify-between text-xs mb-1">
-                          <span className="text-gray-400">Proficiency</span>
-                          <span className="text-gray-400">{skill.proficiency}%</span>
-                        </div>
-                        <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
-                          <div 
-                            className={`h-full ${getProficiencyColor(skill.proficiency)}`}
-                            style={{ width: `${skill.proficiency}%` }}
-                          ></div>
-                        </div>
-                      </div>
+                      {/* Proficiency bar removed */}
                       
                       {skill.category && (
                         <div className="text-sm text-gray-400">

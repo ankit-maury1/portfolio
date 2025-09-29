@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { getContactMessageById, markContactMessageAsRead, markContactMessageAsReplied, deleteContactMessage } from '@/lib/contact-messages';
+// Activity logging now handled inside helper functions to avoid duplication
 
 // GET - Get a specific contact message by ID
 export async function GET(
@@ -14,7 +15,8 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const message = await getContactMessageById(params.id);
+  const messageRaw = await getContactMessageById(params.id);
+  const message = messageRaw && typeof messageRaw === 'object' ? (messageRaw as any) : null;
 
     if (!message) {
       return NextResponse.json({ error: 'Message not found' }, { status: 404 });
@@ -39,19 +41,19 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json();
-    const { read, replied } = body;
+  const body = await request.json();
+  const { read: readFlag, replied: repliedFlag } = body as { read?: boolean; replied?: boolean };
     
     let success = false;
     
     // Update read status if provided
-    if (typeof read === 'boolean') {
-      success = await markContactMessageAsRead(params.id, read);
+    if (typeof readFlag === 'boolean') {
+      success = await markContactMessageAsRead(params.id, readFlag);
     }
     
     // Update replied status if provided
-    if (typeof replied === 'boolean') {
-      success = await markContactMessageAsReplied(params.id, replied);
+    if (typeof repliedFlag === 'boolean') {
+      success = await markContactMessageAsReplied(params.id, repliedFlag);
     }
     
     if (!success) {
@@ -60,7 +62,7 @@ export async function PATCH(
     
     // Get updated message
     const message = await getContactMessageById(params.id);
-    
+
     return NextResponse.json(message);
   } catch (error) {
     console.error('Error updating contact message:', error);

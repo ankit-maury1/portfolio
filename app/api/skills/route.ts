@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { ObjectId } from "mongodb";
 import { findMany, getDatabase } from "@/lib/mongodb-helpers";
+import { trackDetailedActivity } from '@/lib/activity-tracking';
 
 export async function GET() {
   try {
@@ -97,6 +98,20 @@ export async function POST(request: NextRequest) {
     };
 
     const result = await db.collection('Skill').insertOne(newSkill);
+
+    // Log activity for skill creation
+    try {
+      await trackDetailedActivity(
+        'skill',
+        name,
+        'create',
+        `Created new skill: ${name}`,
+        '/admin/skills',
+        session.user.name || 'Admin'
+      );
+    } catch (err) {
+      console.error('Failed to log skill creation activity', err);
+    }
 
     return NextResponse.json({
       ...newSkill,

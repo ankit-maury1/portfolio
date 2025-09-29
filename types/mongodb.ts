@@ -56,6 +56,8 @@ export interface MongoProject {
   userId: ObjectId;
   skillIds: ObjectId[];
   gallery?: string[];
+  status?: 'planned' | 'in-progress' | 'completed';
+  category?: 'frontend' | 'backend' | 'fullstack' | 'mobile' | 'design';
   createdAt: Date;
   updatedAt: Date;
 }

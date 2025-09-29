@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { ObjectId } from "mongodb";
 import { getDatabase } from "@/lib/mongodb-helpers";
+import { trackDetailedActivity } from '@/lib/activity-tracking';
 
 export async function GET(
   request: NextRequest,
@@ -121,19 +122,21 @@ export async function PUT(
       { returnDocument: 'after' }
     );
     
-    if (!result) {
+    const updatedDoc: any = (result as any)?.value || result; // compatibility if driver returns { value }
+    
+    if (!updatedDoc) {
       return NextResponse.json({ error: "Failed to update skill" }, { status: 500 });
     }
     
     // Get the category to include in response
     const category = await db.collection('SkillCategory').findOne({
-      _id: result.categoryId
+      _id: updatedDoc.categoryId
     });
     
-    const formattedResult = {
-      ...result,
-      id: result._id.toString(),
-      categoryId: result.categoryId.toString(),
+    const formattedResult: any = {
+      ...updatedDoc,
+      id: updatedDoc._id.toString(),
+      categoryId: updatedDoc.categoryId.toString(),
       category: category ? {
         ...category,
         id: category._id.toString(),
@@ -142,6 +145,20 @@ export async function PUT(
       _id: undefined
     };
     
+    // Attempt to log activity
+    try {
+      await trackDetailedActivity(
+        'skill',
+        (formattedResult as any).name || 'Skill',
+        'update',
+        `Updated skill: ${(formattedResult as any).name}`,
+        '/admin/skills',
+        session.user.name || 'Admin'
+      );
+    } catch (err) {
+      console.error('Failed to log skill update activity', err);
+    }
+
     return NextResponse.json(formattedResult);
   } catch (error) {
     console.error("Error updating skill:", error);
@@ -191,6 +208,20 @@ export async function DELETE(
 
     if (result.deletedCount === 0) {
       return NextResponse.json({ error: "Failed to delete skill" }, { status: 500 });
+    }
+
+    // Attempt to log delete activity
+    try {
+      await trackDetailedActivity(
+        'skill',
+        existingSkill.name || 'Skill',
+        'delete',
+        `Deleted skill: ${existingSkill.name}`,
+        '/admin/skills',
+        session.user.name || 'Admin'
+      );
+    } catch (err) {
+      console.error('Failed to log skill delete activity', err);
     }
 
     return NextResponse.json({ success: true });

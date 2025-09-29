@@ -51,8 +51,10 @@ export async function getContactMessageCountByStatus() {
     
     // Count messages by status
     all.forEach((message) => {
-      const status = message.status || 'new';
-      counts[status]++;
+      const status = (message.status || 'new') as keyof typeof counts;
+      if (status in counts) {
+        counts[status]!++;
+      }
       
       // Also count unread messages
       if (!message.read) {
@@ -175,7 +177,21 @@ export async function markContactMessageAsReplied(id: string, isReplied: boolean
         updatedAt: new Date()
       }
     );
-    
+    // Track reply activity
+    if (isReplied) {
+      const message = await getContactMessageById(id);
+      if (message && 'name' in message && 'subject' in message) {
+        const { trackDetailedActivity } = await import('./activity-tracking');
+        await trackDetailedActivity(
+          'contact',
+          `Contact from ${(message as any).name}`,
+          'reply',
+          `Replied to message "${(message as any).subject}"`,
+          `/admin/contact`,
+          'admin'
+        );
+      }
+    }
     return true;
   } catch (error) {
     console.error(`Error updating replied status for message ${id}:`, error);
@@ -186,7 +202,20 @@ export async function markContactMessageAsReplied(id: string, isReplied: boolean
 // Delete a contact message
 export async function deleteContactMessage(id: string) {
   try {
+    const message = await getContactMessageById(id);
     await deleteOne('contactMessages', { _id: new ObjectId(id) });
+    // Track delete activity
+    if (message && 'subject' in message) {
+      const { trackDetailedActivity } = await import('./activity-tracking');
+      await trackDetailedActivity(
+        'contact',
+        (message as any).subject || 'Contact Message',
+        'delete',
+        `Deleted contact message: ${(message as any).subject || ''}`,
+        `/admin/contact`,
+        'admin'
+      );
+    }
     return true;
   } catch (error) {
     console.error(`Error deleting contact message ${id}:`, error);

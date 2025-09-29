@@ -83,8 +83,49 @@ export default function ProjectsPage() {
   const filteredProjects = projects.filter(project => {
     if (filter === 'all') return true;
     if (filter === 'featured') return project.featured;
+    if (filter === 'web') {
+      // Treat 'web' as umbrella for frontend, backend, fullstack
+      return ['frontend', 'backend', 'fullstack'].includes(project.category || '');
+    }
     return project.category === filter || project.status === filter;
   });
+
+  // Derive available categories and statuses from fetched projects (filter out falsy values)
+  const availableCategories = Array.from(
+    new Set(
+      projects
+        .map(p => p.category)
+        .filter((c): c is string => typeof c === 'string' && c.trim() !== '')
+    )
+  );
+
+  const availableStatuses = Array.from(
+    new Set(
+      projects
+        .map(p => p.status)
+        .filter((s): s is string => typeof s === 'string' && s.trim() !== '')
+    )
+  );
+
+  // Helper to ensure liveUrl is absolute and doesn't duplicate the base origin.
+  // If liveUrl already includes a protocol (http/https) use it as-is.
+  // If it starts with a slash, prefix the current site origin.
+  // Otherwise treat it as a relative path and prefix with a slash + origin.
+  const getAbsoluteUrl = (raw?: string) => {
+    if (!raw) return undefined;
+    try {
+      // If it's already an absolute URL, this will succeed.
+      const maybeUrl = new URL(raw);
+      return maybeUrl.toString();
+    } catch (e) {
+      // Not an absolute URL — build one from the current origin.
+      // window may be undefined in SSR; guard against that.
+      if (typeof window === 'undefined') return raw;
+      const origin = window.location?.origin || '';
+      if (raw.startsWith('/')) return origin + raw;
+      return origin + '/' + raw;
+    }
+  };
   
   return (
     <main className="relative min-h-screen pt-16 pb-24">
@@ -120,24 +161,32 @@ export default function ProjectsPage() {
             >
               Featured
             </button>
-            <button
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all 
-              ${filter === 'web' 
-                ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white' 
-                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}
-              onClick={() => setFilter('web')}
-            >
-              Web
-            </button>
-            <button
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all 
-              ${filter === 'mobile' 
-                ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white' 
-                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}
-              onClick={() => setFilter('mobile')}
-            >
-              Mobile
-            </button>
+
+            {availableCategories.map((cat) => (
+              <button
+                key={cat}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all 
+                ${filter === cat 
+                  ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white' 
+                  : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}
+                onClick={() => setFilter(cat)}
+              >
+                {cat.charAt(0).toUpperCase() + cat.slice(1)}
+              </button>
+            ))}
+
+            {availableStatuses.map((status) => (
+              <button
+                key={status}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all 
+                ${filter === status 
+                  ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white' 
+                  : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}
+                onClick={() => setFilter(status)}
+              >
+                {status === 'in-progress' ? 'In Progress' : status.charAt(0).toUpperCase() + status.slice(1)}
+              </button>
+            ))}
           </div>
           
           {isLoading ? (
@@ -178,7 +227,7 @@ export default function ProjectsPage() {
                       <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-70 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
                         {project.liveUrl && (
                           <a 
-                            href={project.liveUrl} 
+                            href={getAbsoluteUrl(project.liveUrl)} 
                             target="_blank" 
                             rel="noopener noreferrer"
                             className="px-4 py-2 bg-cyan-500 rounded-full text-sm font-medium mx-2 hover:bg-cyan-600 transition-colors"

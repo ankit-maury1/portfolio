@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { getDatabase } from '@/lib/mongodb-helpers';
+import { trackDetailedActivity } from '@/lib/activity-tracking';
 import { ObjectId } from 'mongodb';
 
 export async function GET() {
@@ -197,6 +198,19 @@ export async function POST(request: Request) {
       ...completeBlogPost,
       _id: undefined
     };
+
+    try {
+      await trackDetailedActivity(
+        'blog',
+        body.title,
+        'create',
+        `Created blog post: ${body.title}`,
+        '/admin/blog',
+        session.user.name || 'Admin'
+      );
+    } catch (err) {
+      console.error('Failed to log blog create activity', err);
+    }
 
     return NextResponse.json(transformedPost);
   } catch (error) {

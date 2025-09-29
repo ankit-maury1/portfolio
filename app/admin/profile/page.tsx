@@ -353,17 +353,20 @@ export default function AdminProfile() {
                       className="bg-gray-900 border-gray-700"
                     />
                     <Label htmlFor="technologies" className="mt-4">
-                      Technologies
+                      Technologies (comma separated)
                     </Label>
                     <Input
                       id="technologies"
                       name="technologies"
-                      type="number"
+                      type="text"
                       value={profileData.technologies}
                       onChange={handleChange}
-                      placeholder="10"
+                      placeholder="React, Next.js, TypeScript, Node.js"
                       className="bg-gray-900 border-gray-700"
                     />
+                    <p className="text-xs text-gray-400">
+                      Enter a comma separated list of technologies. These will appear as colored badges on the About page.
+                    </p>
                   </div>
                 </div>
               </div>

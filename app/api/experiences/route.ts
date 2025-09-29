@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { findMany, getDatabase, insertOne } from '@/lib/mongodb-helpers';
+import { trackDetailedActivity } from '@/lib/activity-tracking';
 
 export async function GET() {
   try {
@@ -54,6 +55,19 @@ export async function POST(request: Request) {
     };
 
     const result = await insertOne('Experience', newExperience);
+
+    try {
+      await trackDetailedActivity(
+        'experience',
+        `${title} - ${company}`,
+        'create',
+        `Added experience: ${title} at ${company}`,
+        '/admin/experience',
+        session.user.name || 'Admin'
+      );
+    } catch (err) {
+      console.error('Failed to log experience create activity', err);
+    }
     
     return NextResponse.json({
       ...newExperience,

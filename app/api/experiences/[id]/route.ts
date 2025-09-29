@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { ObjectId } from 'mongodb';
 import { findById, getDatabase } from '@/lib/mongodb-helpers';
+import { trackDetailedActivity } from '@/lib/activity-tracking';
 
 export async function GET(
   request: Request,
@@ -76,11 +77,27 @@ export async function PUT(
       return NextResponse.json({ error: 'Experience not found' }, { status: 404 });
     }
 
-    return NextResponse.json({
-      ...result,
-      id: result._id.toString(),
+    const updated: any = (result as any)?.value || result;
+    const responsePayload = {
+      ...updated,
+      id: updated._id.toString(),
       _id: undefined
-    });
+    };
+
+    try {
+      await trackDetailedActivity(
+        'experience',
+        `${updated.title || title} - ${updated.company || company}`,
+        'update',
+        `Updated experience: ${updated.title || title} at ${updated.company || company}`,
+        '/admin/experience',
+        session.user.name || 'Admin'
+      );
+    } catch (err) {
+      console.error('Failed to log experience update activity', err);
+    }
+
+    return NextResponse.json(responsePayload);
   } catch (error) {
     console.error('Error updating experience:', error);
     return NextResponse.json({ error: 'Failed to update experience' }, { status: 500 });
@@ -99,12 +116,26 @@ export async function DELETE(
     }
 
     const db = await getDatabase();
-    const result = await db.collection('Experience').deleteOne({ 
-      _id: new ObjectId(params.id) 
-    });
+    const existing = await db.collection('Experience').findOne({ _id: new ObjectId(params.id) });
+    const result = await db.collection('Experience').deleteOne({ _id: new ObjectId(params.id) });
 
     if (result.deletedCount === 0) {
       return NextResponse.json({ error: 'Experience not found' }, { status: 404 });
+    }
+
+    try {
+      if (existing) {
+        await trackDetailedActivity(
+          'experience',
+          `${existing.title || 'Experience'} - ${existing.company || ''}`,
+          'delete',
+          `Deleted experience: ${existing.title} at ${existing.company}`,
+          '/admin/experience',
+          session.user.name || 'Admin'
+        );
+      }
+    } catch (err) {
+      console.error('Failed to log experience delete activity', err);
     }
 
     return NextResponse.json({ success: true });

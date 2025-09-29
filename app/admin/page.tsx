@@ -49,10 +49,12 @@ export default function AdminDashboard() {
   const fetchActivities = async () => {
     setIsLoadingActivities(true);
     try {
-      const response = await fetch('/api/activities?limit=5');
+      const response = await fetch('/api/activities?limit=5', { cache: 'no-store' });
       if (response.ok) {
         const data = await response.json();
-        setActivities(data);
+        // Support both legacy array and new paginated format
+        const list = Array.isArray(data) ? data : data.activities || [];
+        setActivities(list);
       } else {
         console.error("Error fetching activities:", await response.text());
       }
@@ -201,12 +203,17 @@ export default function AdminDashboard() {
                   <div>
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-xl font-medium">Recent Activity</h3>
-                      <button 
-                        onClick={fetchActivities} 
-                        className="text-sm text-primary hover:text-primary/80"
-                      >
-                        Refresh
-                      </button>
+                      <div className="flex items-center gap-3">
+                        <button 
+                          onClick={fetchActivities} 
+                          className="text-sm text-primary hover:text-primary/80"
+                        >
+                          Refresh
+                        </button>
+                        <Link href="/admin/activities" className="text-sm text-muted-foreground hover:text-foreground underline underline-offset-4">
+                          View all
+                        </Link>
+                      </div>
                     </div>
                     <div className="space-y-3">
                       {activities.length === 0 && !isLoading ? (
@@ -277,6 +284,15 @@ export default function AdminDashboard() {
                       >
                         <span className="group-hover:text-primary transition-colors">Site Content</span>
                         <svg className="h-4 w-4 ml-auto text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </Link>
+                      <Link 
+                        href="/admin/activities" 
+                        className="p-3 rounded-lg bg-muted/30 border border-border hover:border-blue-500/40 transition-all flex items-center group"
+                      >
+                        <span className="group-hover:text-blue-500 transition-colors">Activity History</span>
+                        <svg className="h-4 w-4 ml-auto text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>
                       </Link>

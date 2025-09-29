@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { X, Plus, Pencil, Trash2, ExternalLink, Image } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 
-// Define the project type
+// Types
 type Project = {
   id: string;
   title: string;
@@ -22,11 +22,15 @@ type Project = {
   featured: boolean;
   liveUrl: string;
   githubUrl: string;
-  technologies: string[];
+  technologies: string[]; // display names
+  skillIds: string[]; // actual IDs used in API
 };
+
+interface SkillOption { id: string; name: string; }
 
 export default function ProjectsManagement() {
   const [projects, setProjects] = useState<Project[]>([]);
+  const [skills, setSkills] = useState<SkillOption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -52,7 +56,8 @@ export default function ProjectsManagement() {
           featured: p.featured,
           liveUrl: p.liveUrl || '',
           githubUrl: p.githubUrl || '',
-          technologies: p.skills?.map((ps: any) => ps.name) || []
+          technologies: p.skills?.map((ps: any) => ps.name) || [],
+          skillIds: p.skills?.map((ps: any) => ps.id || ps._id)?.filter(Boolean) || []
         }));
         
         setProjects(formattedProjects);
@@ -67,25 +72,30 @@ export default function ProjectsManagement() {
     fetchProjects();
   }, []);
 
+  // Fetch skills for selection
+  useEffect(() => {
+    const fetchSkills = async () => {
+      try {
+        const res = await fetch('/api/skills');
+        if (!res.ok) return;
+        const data = await res.json();
+        const options: SkillOption[] = data.map((s: any) => ({ id: s.id || s._id, name: s.name }));
+        setSkills(options);
+      } catch (e) {
+        console.error('Failed to load skills', e);
+      }
+    };
+    fetchSkills();
+  }, []);
+
   // Define the project type
-  type Project = {
-    id: string;
-    title: string;
-    description: string;
-    image: string;
-    status: string;
-    category: string;
-    featured: boolean;
-    liveUrl: string;
-    githubUrl: string;
-    technologies: string[];
-  };
+  // duplicate type removed
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [currentProject, setCurrentProject] = useState<Project | null>(null);
-  const [newProject, setNewProject] = useState<Omit<Project, 'id'> & {id?: string}>({
+  const [newProject, setNewProject] = useState<Omit<Project, 'id' | 'skillIds'> & {id?: string, skillIds?: string[]}>({
     title: "",
     description: "",
     image: "",
@@ -94,13 +104,18 @@ export default function ProjectsManagement() {
     featured: false,
     liveUrl: "",
     githubUrl: "",
-    technologies: []
+    technologies: [],
+    skillIds: []
   });
+
+  // Inline 'Other' category text inputs
+  const [newCategoryInput, setNewCategoryInput] = useState("");
+  const [editCategoryInput, setEditCategoryInput] = useState("");
 
   // For technology tags input
   const [newTech, setNewTech] = useState("");
 
-  const addTechnology = (project: Project | (Omit<Project, 'id'> & {id?: string}), tech: string) => {
+  const addTechnology = (project: Project | (Omit<Project, 'id' | 'skillIds'> & {id?: string, skillIds?: string[]}), tech: string) => {
     if (!tech.trim()) return;
     if (project.technologies.includes(tech.trim())) return;
     
@@ -113,7 +128,7 @@ export default function ProjectsManagement() {
     setNewTech("");
   };
 
-  const removeTechnology = (project: Project | (Omit<Project, 'id'> & {id?: string}), techToRemove: string) => {
+  const removeTechnology = (project: Project | (Omit<Project, 'id' | 'skillIds'> & {id?: string, skillIds?: string[]}), techToRemove: string) => {
     const updatedTech = project.technologies.filter((tech: string) => tech !== techToRemove);
     if (project === newProject) {
       setNewProject({...newProject, technologies: updatedTech});
@@ -122,20 +137,43 @@ export default function ProjectsManagement() {
     }
   };
 
+  // Toggle skill selection (shared for add/edit dialogs)
+  const toggleSkill = (
+    skillId: string,
+    skillName: string,
+    project: any,
+    setProject: (p: any) => void
+  ) => {
+    const currentIds: string[] = project.skillIds || [];
+    const has = currentIds.includes(skillId);
+    const nextIds = has ? currentIds.filter(id => id !== skillId) : [...currentIds, skillId];
+    const techNames = skills.filter(s => nextIds.includes(s.id)).map(s => s.name);
+    setProject({ ...project, skillIds: nextIds, technologies: techNames });
+  };
+
+  const normalizeUrl = (val: string) => {
+    if (!val) return '';
+    const trimmed = val.trim();
+    if (!trimmed) return '';
+    if (/^https?:\/\//i.test(trimmed)) return trimmed;
+    return `https://${trimmed}`;
+  };
+
   const handleAddProject = async () => {
     try {
       // Create API payload
+      const categoryToUse = newProject.category === '__other' ? (newCategoryInput.trim() || 'general') : newProject.category;
+
       const projectData = {
         title: newProject.title,
         description: newProject.description,
         coverImage: newProject.image,
         featured: newProject.featured,
-        liveUrl: newProject.liveUrl,
-        githubUrl: newProject.githubUrl,
+        liveUrl: normalizeUrl(newProject.liveUrl),
+        githubUrl: normalizeUrl(newProject.githubUrl),
         status: newProject.status,
-        category: newProject.category,
-        // We'd need to fetch skill IDs based on names for a real implementation
-        skills: [] // This would need to be actual skill IDs
+        category: categoryToUse,
+        skills: newProject.skillIds || []
       };
       
       const response = await fetch('/api/projects', {
@@ -161,9 +199,10 @@ export default function ProjectsManagement() {
         status: createdProject.status || 'completed',
         category: createdProject.category || 'frontend',
         featured: createdProject.featured,
-        liveUrl: createdProject.liveUrl || '',
-        githubUrl: createdProject.githubUrl || '',
-        technologies: []
+  liveUrl: createdProject.liveUrl || '',
+  githubUrl: createdProject.githubUrl || '',
+        technologies: (createdProject.skills || []).map((s: any) => s.name) || [],
+        skillIds: (createdProject.skills || []).map((s: any) => s.id || s._id) || []
       };
       
       setProjects([...projects, formattedProject]);
@@ -176,9 +215,11 @@ export default function ProjectsManagement() {
         featured: false,
         liveUrl: "",
         githubUrl: "",
-        technologies: []
+        technologies: [],
+        skillIds: []
       });
       setIsAddDialogOpen(false);
+  setNewCategoryInput("");
       
     } catch (err) {
       console.error('Error creating project:', err);
@@ -191,17 +232,18 @@ export default function ProjectsManagement() {
     
     try {
       // Create API payload
+      const categoryToUse = currentProject.category === '__other' ? (editCategoryInput.trim() || 'general') : currentProject.category;
+
       const projectData = {
         title: currentProject.title,
         description: currentProject.description,
         coverImage: currentProject.image,
         featured: currentProject.featured,
-        liveUrl: currentProject.liveUrl,
-        githubUrl: currentProject.githubUrl,
+        liveUrl: normalizeUrl(currentProject.liveUrl),
+        githubUrl: normalizeUrl(currentProject.githubUrl),
         status: currentProject.status,
-        category: currentProject.category,
-        // We'd need to fetch skill IDs based on names for a real implementation
-        skills: [] // This would need to be actual skill IDs
+        category: categoryToUse,
+        skills: currentProject.skillIds
       };
       
       const response = await fetch(`/api/projects/${currentProject.id}`, {
@@ -218,23 +260,26 @@ export default function ProjectsManagement() {
       
       const updatedProject = await response.json();
       
-      // Update projects in state
-      const updatedProjects = projects.map(proj => 
-        proj.id === currentProject.id ? {
-          ...proj,
-          title: updatedProject.title,
-          description: updatedProject.description,
-          image: updatedProject.coverImage || '',
-          featured: updatedProject.featured,
-          liveUrl: updatedProject.liveUrl || '',
-          githubUrl: updatedProject.githubUrl || '',
-          status: updatedProject.status || proj.status,
-          category: updatedProject.category || proj.category,
-        } : proj
-      );
+          // Update projects in state
+          const updatedProjects = projects.map(proj => 
+            proj.id === currentProject.id ? {
+              ...proj,
+              title: updatedProject.title,
+              description: updatedProject.description,
+              image: updatedProject.coverImage || '',
+              featured: updatedProject.featured,
+              liveUrl: updatedProject.liveUrl || '',
+              githubUrl: updatedProject.githubUrl || '',
+              status: updatedProject.status || proj.status,
+              category: updatedProject.category || proj.category,
+              technologies: (updatedProject.skills || []).map((s: any) => s.name) || proj.technologies,
+              skillIds: (updatedProject.skills || []).map((s: any) => s.id || s._id) || proj.skillIds
+            } : proj
+          );
       
-      setProjects(updatedProjects);
-      setIsEditDialogOpen(false);
+  setProjects(updatedProjects);
+  setIsEditDialogOpen(false);
+  setEditCategoryInput("");
       
     } catch (err) {
       console.error('Error updating project:', err);
@@ -355,14 +400,36 @@ export default function ProjectsManagement() {
                   <SelectTrigger className="col-span-3 bg-gray-800 border-gray-700 text-white">
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
-                  <SelectContent className="bg-gray-800 border-gray-700 text-white">
-                    <SelectItem value="frontend">Frontend</SelectItem>
-                    <SelectItem value="backend">Backend</SelectItem>
-                    <SelectItem value="fullstack">Fullstack</SelectItem>
-                    <SelectItem value="mobile">Mobile</SelectItem>
-                    <SelectItem value="design">Design</SelectItem>
-                  </SelectContent>
+                                <SelectContent className="bg-gray-800 border-gray-700 text-white">
+                                  {Array.from(new Set(projects.map(p => p.category).filter(Boolean))).length > 0 ? (
+                                    <>
+                                      {Array.from(new Set(projects.map(p => p.category).filter(Boolean))).map((c) => (
+                                        <SelectItem key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</SelectItem>
+                                      ))}
+                                      <SelectItem value="__other">Other</SelectItem>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <SelectItem value="frontend">Frontend</SelectItem>
+                                      <SelectItem value="backend">Backend</SelectItem>
+                                      <SelectItem value="fullstack">Fullstack</SelectItem>
+                                      <SelectItem value="mobile">Mobile</SelectItem>
+                                      <SelectItem value="design">Design</SelectItem>
+                                      <SelectItem value="__other">Other</SelectItem>
+                                    </>
+                                  )}
+                                </SelectContent>
                 </Select>
+                              {newProject.category === '__other' && (
+                                <div className="col-span-3 mt-2">
+                                  <Input
+                                    placeholder="Enter new category"
+                                    className="bg-gray-800 border-gray-700 text-white"
+                                    value={newCategoryInput}
+                                    onChange={(e) => setNewCategoryInput(e.target.value)}
+                                  />
+                                </div>
+                              )}
               </div>
               
               <div className="grid grid-cols-4 items-center gap-4">
@@ -408,7 +475,26 @@ export default function ProjectsManagement() {
                 <Label htmlFor="technologies" className="text-right text-white">
                   Technologies
                 </Label>
-                <div className="col-span-3 space-y-2">
+                <div className="col-span-3 space-y-4">
+                  <div>
+                    <p className="text-xs text-gray-400 mb-1">Select Skills</p>
+                    <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto border border-gray-800 p-2 rounded">
+                      {skills.map(skill => {
+                        const active = (newProject.skillIds || []).includes(skill.id);
+                        return (
+                          <button
+                            type="button"
+                            key={skill.id}
+                            onClick={() => toggleSkill(skill.id, skill.name, newProject, setNewProject)}
+                            className={`px-2 py-1 rounded text-xs border ${active ? 'bg-cyan-600/20 text-cyan-300 border-cyan-500/40' : 'text-gray-400 border-gray-700 hover:border-cyan-600 hover:text-cyan-300'}`}
+                          >
+                            {skill.name}
+                          </button>
+                        );
+                      })}
+                      {skills.length === 0 && <span className="text-xs text-gray-500">No skills loaded</span>}
+                    </div>
+                  </div>
                   <div className="flex">
                     <Input
                       id="technologies"
@@ -613,13 +699,35 @@ export default function ProjectsManagement() {
                                   <SelectValue placeholder="Select category" />
                                 </SelectTrigger>
                                 <SelectContent className="bg-gray-800 border-gray-700 text-white">
-                                  <SelectItem value="frontend">Frontend</SelectItem>
-                                  <SelectItem value="backend">Backend</SelectItem>
-                                  <SelectItem value="fullstack">Fullstack</SelectItem>
-                                  <SelectItem value="mobile">Mobile</SelectItem>
-                                  <SelectItem value="design">Design</SelectItem>
+                                  {Array.from(new Set(projects.map(p => p.category).filter(Boolean))).length > 0 ? (
+                                    <>
+                                      {Array.from(new Set(projects.map(p => p.category).filter(Boolean))).map((c) => (
+                                        <SelectItem key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</SelectItem>
+                                      ))}
+                                      <SelectItem value="__other">Other</SelectItem>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <SelectItem value="frontend">Frontend</SelectItem>
+                                      <SelectItem value="backend">Backend</SelectItem>
+                                      <SelectItem value="fullstack">Fullstack</SelectItem>
+                                      <SelectItem value="mobile">Mobile</SelectItem>
+                                      <SelectItem value="design">Design</SelectItem>
+                                      <SelectItem value="__other">Other</SelectItem>
+                                    </>
+                                  )}
                                 </SelectContent>
                               </Select>
+                              {currentProject?.category === '__other' && (
+                                <div className="col-span-3 mt-2">
+                                  <Input
+                                    placeholder="Enter new category"
+                                    className="bg-gray-800 border-gray-700 text-white"
+                                    value={editCategoryInput}
+                                    onChange={(e) => setEditCategoryInput(e.target.value)}
+                                  />
+                                </div>
+                              )}
                             </div>
                             
                             <div className="grid grid-cols-4 items-center gap-4">
@@ -665,7 +773,26 @@ export default function ProjectsManagement() {
                               <Label htmlFor="edit-technologies" className="text-right text-white">
                                 Technologies
                               </Label>
-                              <div className="col-span-3 space-y-2">
+                              <div className="col-span-3 space-y-4">
+                                <div>
+                                  <p className="text-xs text-gray-400 mb-1">Select Skills</p>
+                                  <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto border border-gray-800 p-2 rounded">
+                                    {skills.map(skill => {
+                                      const active = (currentProject.skillIds || []).includes(skill.id);
+                                      return (
+                                        <button
+                                          type="button"
+                                          key={skill.id}
+                                          onClick={() => toggleSkill(skill.id, skill.name, currentProject, setCurrentProject)}
+                                          className={`px-2 py-1 rounded text-xs border ${active ? 'bg-cyan-600/20 text-cyan-300 border-cyan-500/40' : 'text-gray-400 border-gray-700 hover:border-cyan-600 hover:text-cyan-300'}`}
+                                        >
+                                          {skill.name}
+                                        </button>
+                                      );
+                                    })}
+                                    {skills.length === 0 && <span className="text-xs text-gray-500">No skills loaded</span>}
+                                  </div>
+                                </div>
                                 <div className="flex">
                                   <Input
                                     id="edit-technologies"
