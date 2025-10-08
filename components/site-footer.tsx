@@ -4,6 +4,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { Github, Linkedin, Mail, Twitter, ExternalLink, MapPin, Phone } from "lucide-react"
+import type { SiteSetting } from '@/lib/site-settings'
 
 export function SiteFooter() {
   const [profile, setProfile] = React.useState({
@@ -28,10 +29,22 @@ export function SiteFooter() {
         const response = await fetch('/api/site-settings')
         if (!response.ok) throw new Error('Failed to fetch site settings')
         
-        const settings = await response.json()
-        const profileData: any = {}
-        
-        settings.forEach((setting: any) => {
+        const settings = await response.json() as SiteSetting[]
+        const profileData: {
+          name?: string;
+          bio?: string;
+          email?: string;
+          location?: string;
+          phone?: string;
+          website?: string;
+          github?: string;
+          linkedin?: string;
+          twitter?: string;
+          logo?: string;
+          copyright?: string;
+        } = {}
+
+        settings.forEach((setting: SiteSetting) => {
           if (setting.key === 'profile_name') profileData.name = setting.value
           if (setting.key === 'profile_bio') profileData.bio = setting.value
           if (setting.key === 'profile_email') profileData.email = setting.value
@@ -45,7 +58,19 @@ export function SiteFooter() {
           if (setting.key === 'site_copyright') profileData.copyright = setting.value
         })
         
-        setProfile(profileData)
+        setProfile({
+          name: profileData.name || '',
+          bio: profileData.bio || '',
+          email: profileData.email || '',
+          location: profileData.location || '',
+          phone: profileData.phone || '',
+          website: profileData.website || '',
+          github: profileData.github || '',
+          linkedin: profileData.linkedin || '',
+          twitter: profileData.twitter || '',
+          logo: profileData.logo || '',
+          copyright: profileData.copyright || ''
+        })
         setIsLoading(false)
       } catch (error) {
         console.error('Error fetching profile data:', error)
@@ -61,7 +86,7 @@ export function SiteFooter() {
         <div className="space-y-3">
           <Link 
             href="/"
-            className="font-orbitron text-xl font-bold text-primary neon-text"
+            className="font-orbitron text-xl font-bold text-primary "
           >
             {profile.logo ? (
               <img 

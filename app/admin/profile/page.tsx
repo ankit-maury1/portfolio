@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
-import { Upload, Save, User, Mail, Link2, MapPin, Calendar, Briefcase } from "lucide-react";
+import { Save, User, Mail, Link2, MapPin, Calendar, Briefcase } from "lucide-react";
 import { useProfileData, invalidateProfileCache, ProfileData as ProfileDataType } from "@/lib/client/profile-data";
 
 interface ProfileData {

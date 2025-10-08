@@ -48,15 +48,15 @@ export async function getRecentActivity(limit: number = 10) {
         limit
       });
       
-      return defaultActivities.map((activity: any) => ({
+      return (defaultActivities as ActivityItem[]).map((activity: ActivityItem) => ({
         ...activity,
-        _id: activity._id.toString(),
+        _id: activity._id?.toString ? activity._id.toString() : String(activity._id),
       }));
     }
     
-    return activities.map((activity: any) => ({
+    return (activities as ActivityItem[]).map((activity: ActivityItem) => ({
       ...activity,
-      _id: activity._id.toString(),
+      _id: activity._id?.toString ? activity._id.toString() : String(activity._id),
     }));
   } catch (error) {
     console.error('Error fetching recent activity:', error);
@@ -136,7 +136,7 @@ export async function trackPageView(path: string): Promise<number> {
     
     if (existingView) {
       // Update existing record
-      const result = await updateOne(
+      await updateOne(
         'page_views',
         { path },
         { 
@@ -155,8 +155,8 @@ export async function trackPageView(path: string): Promise<number> {
       };
       
       // Insert the new document directly using mongodb-helpers
-      const db = await getDatabase();
-      await db.collection('page_views').insertOne(newView);
+  const db = await getDatabase();
+  await db.collection('page_views').insertOne(newView);
       
       return 1;
     }

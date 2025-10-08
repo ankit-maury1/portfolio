@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, useInView } from "framer-motion";
+import type { SiteSetting } from '@/lib/site-settings';
 import { HeroSection } from "@/components/three/HeroSection";
 
 // Animation variants for sections
@@ -116,10 +117,10 @@ export default function Home() {
       try {
         const response = await fetch('/api/site-settings');
         if (!response.ok) throw new Error('Failed to fetch profile data');
-        const settings = await response.json();
-        // Map settings to profile data
-        const profileData: any = {};
-        settings.forEach((setting: any) => {
+  const settings = await response.json() as SiteSetting[];
+  // Map settings to profile data
+  const profileData: Partial<Record<string, string>> = {};
+  settings.forEach((setting: SiteSetting) => {
           if (setting.key === 'profile_name') profileData.name = setting.value;
           if (setting.key === 'profile_bio') profileData.bio = setting.value;
           if (setting.key === 'profile_role') profileData.role = setting.value;

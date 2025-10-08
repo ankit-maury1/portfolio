@@ -1,13 +1,13 @@
 'use server';
 
-import { MongoClient } from 'mongodb';
+import { MongoClient, Db } from 'mongodb';
 
 // This is a direct connection to MongoDB that doesn't use the shared client
 // It's used specifically for API routes that need to access MongoDB
 
-let cachedDb: any = null;
+let cachedDb: Db | null = null;
 
-export async function connectToDatabase() {
+export async function connectToDatabase(): Promise<Db> {
   if (cachedDb) {
     return cachedDb;
   }
@@ -18,7 +18,7 @@ export async function connectToDatabase() {
 
   const client = await MongoClient.connect(process.env.MONGODB_URI as string);
   const db = client.db();
-  
+
   cachedDb = db;
   return db;
 }

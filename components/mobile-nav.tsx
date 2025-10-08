@@ -72,7 +72,7 @@ export function MobileNav() {
           website: '',
         }
         
-        settings.forEach((setting: any) => {
+        settings.forEach((setting: { key: string; value: string }) => {
           if (setting.key === 'profile_github') profileData.github = setting.value
           if (setting.key === 'profile_linkedin') profileData.linkedin = setting.value
           if (setting.key === 'profile_twitter') profileData.twitter = setting.value

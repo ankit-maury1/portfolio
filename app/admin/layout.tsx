@@ -147,7 +147,7 @@ export default function AdminLayout({
       >
         {/* Logo and Title */}
         <Link href="/admin" className="p-6 border-b border-sidebar-border">
-          <h1 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-blue-500">
+          <h1 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-200 to-green-400">
             Admin Panel
           </h1>
         </Link>
@@ -177,7 +177,7 @@ export default function AdminLayout({
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center">
               <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
-                {session?.user?.name?.[0] || "A"}
+                {session?.user?.name?.[0]}
               </div>
               <div className="ml-2">
                 <p className="text-sm font-medium">{session?.user?.name}</p>

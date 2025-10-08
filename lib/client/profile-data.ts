@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import type { SiteSetting } from '@/lib/site-settings';
 
 // Interface for profile data
 export interface ProfileData {
@@ -72,13 +73,13 @@ export function useProfileData(forceRefresh = false) {
             throw new Error('Failed to fetch profile data');
           }
           
-          const settings = await response.json();
-          
+          const settings = await response.json() as SiteSetting[];
+
           // Map settings to profile data
           const profileData: Partial<ProfileData> = { ...defaultProfile };
           const taglines: string[] = [];
-          
-          settings.forEach((setting: any) => {
+
+          settings.forEach((setting: SiteSetting) => {
             if (setting.key === 'profile_name') profileData.name = setting.value;
             if (setting.key === 'profile_bio') profileData.bio = setting.value;
             if (setting.key === 'profile_role') profileData.role = setting.value;

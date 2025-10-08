@@ -11,11 +11,11 @@ import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import { Toaster as UIToaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
-  title: "Portfolio | Modern Developer Portfolio",
-  description: "A futuristic portfolio website showcasing skills, projects, and professional achievements.",
-  keywords: ["portfolio", "developer", "web development", "projects", "skills"],
-  authors: [{ name: "Your Name" }],
-  creator: "Your Name",
+  title: "Portfolio | Ankit Maury ",
+  description: "Ankit's portfolio website showcasing skills, projects, and professional achievements.",
+  keywords: ["portfolio", "developer", "web development", "projects", "skills", ""],
+  authors: [{ name: "Ankit Maury" }],
+  creator: "Ankit Maury",
 };
 
 export default function RootLayout({

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, useInView } from "framer-motion";
+import type { SiteSetting } from '@/lib/site-settings';
 
 // Animation variants for sections
 const sectionVariants = {
@@ -40,7 +41,14 @@ export default function AboutPage() {
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
 
   // Featured skills state (from admin skills)
-  const [featuredSkills, setFeaturedSkills] = useState<{ id: string; name: string }[]>([]);
+  interface Skill {
+    id: string;
+    name: string;
+    featured?: boolean;
+    _id?: string;
+  }
+
+  const [featuredSkills, setFeaturedSkills] = useState<Skill[]>([]);
   const [isLoadingSkills, setIsLoadingSkills] = useState(true);
   
   // Fetch profile data
@@ -51,10 +59,10 @@ export default function AboutPage() {
         const response = await fetch('/api/site-settings');
         if (!response.ok) throw new Error('Failed to fetch profile data');
         
-        const settings = await response.json();
+        const settings = await response.json() as SiteSetting[];
         // Map settings to profile data
-        const profileData: any = {};
-        settings.forEach((setting: any) => {
+        const profileData: Partial<Record<string, string>> = {};
+        settings.forEach((setting: SiteSetting) => {
           if (setting.key === 'profile_name') profileData.name = setting.value;
           if (setting.key === 'profile_bio') profileData.bio = setting.value;
           if (setting.key === 'profile_role') profileData.role = setting.value;
@@ -106,8 +114,8 @@ export default function AboutPage() {
         if (!res.ok) throw new Error('Failed to fetch skills');
         const data = await res.json();
         const featured = (data || [])
-          .filter((s: any) => s.featured)
-          .map((s: any) => ({ id: s.id || s._id, name: s.name }));
+          .filter((s: Skill) => s.featured)
+          .map((s: Skill) => ({ id: s.id || s._id || '', name: s.name }));
         setFeaturedSkills(featured);
       } catch (err) {
         console.error('Error fetching featured skills:', err);
@@ -162,7 +170,7 @@ export default function AboutPage() {
                     </div>
                     
                     <p className="text-gray-300 mb-4">
-                      {profile.bio || "I'm a passionate full-stack developer with expertise in modern web technologies. My journey in tech began over 5 years ago, and since then, I've been dedicated to creating elegant solutions to complex problems."}
+                      {profile.bio || "I&apos;m a passionate full-stack developer with expertise in modern web technologies. My journey in tech began over 5 years ago, and since then, I&apos;ve been dedicated to creating elegant solutions to complex problems."}
                     </p>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 text-gray-300">
@@ -293,7 +301,7 @@ export default function AboutPage() {
               </div>
 
               <div className="rounded-xl border border-pink-500/30 bg-black/50 backdrop-blur-sm p-6">
-                <h2 className="text-2xl font-semibold mb-4 text-white">When I'm Not Coding</h2>
+                <h2 className="text-2xl font-semibold mb-4 text-white">When I&apos;m Not Coding</h2>
                 <p className="text-gray-300 mb-4">
                   Outside of tech, I enjoy a variety of activities that help me stay creative and refreshed:
                 </p>
@@ -308,9 +316,9 @@ export default function AboutPage() {
           </div>
           
           <div className="mt-16 rounded-xl border border-cyan-500/30 bg-black/50 backdrop-blur-sm p-6">
-            <h2 className="text-2xl font-semibold mb-6 text-white text-center">Let's Connect</h2>
+            <h2 className="text-2xl font-semibold mb-6 text-white text-center">Let&apos;s Connect</h2>
             <p className="text-gray-300 text-center mb-6">
-              I'm always open to discussing new projects, creative ideas, or opportunities to be part of your vision.
+              I&apos;m always open to discussing new projects, creative ideas, or opportunities to be part of your vision.
             </p>
             <div className="flex justify-center">
               <a 

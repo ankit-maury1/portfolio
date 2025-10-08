@@ -1,15 +1,15 @@
 import { trackDetailedActivity } from '@/lib/activity-tracking';
 import { findMany, updateOne } from '@/lib/mongodb-helpers';
-import { getContactMessageById } from '@/lib/contact-messages';
+import { getContactMessageById, ContactMessage } from '@/lib/contact-messages';
 import { ObjectId } from 'mongodb';
 
 // Get contact messages by status
 export async function getContactMessagesByStatus(status: 'new' | 'read' | 'replied' | 'deleted' | 'archived') {
   try {
-    const messages = await findMany('contactMessages', { status }, { sort: { createdAt: -1 } });
-    return messages.map((message: any) => ({
+    const messages = await findMany('contactMessages', { status }, { sort: { createdAt: -1 } }) as ContactMessage[];
+    return messages.map((message: ContactMessage) => ({
       ...message,
-      _id: message._id.toString(),
+      _id: message._id?.toString ? message._id.toString() : String(message._id),
     }));
   } catch (error) {
     console.error(`Error fetching ${status} contact messages:`, error);

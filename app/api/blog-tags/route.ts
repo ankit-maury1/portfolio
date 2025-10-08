@@ -7,69 +7,73 @@ export async function GET() {
   try {
     const db = await getDatabase();
     
-    // Try to fetch tags from MongoDB
-    let tags: any[] = [];
+    // Try to fetch tags and related post counts from MongoDB
+    let tagDocs: any[] = [];
     try {
-      tags = await db.collection('BlogTag')
-        .aggregate([
-          { $sort: { name: 1 } },
-          {
-            $lookup: {
-              from: 'BlogPost',
-              let: { tagId: '$_id' },
-              pipeline: [
-                {
-                  $match: {
-                    $expr: { $in: ['$$tagId', '$tagIds'] },
-                    published: true,
-                    status: 'PUBLISHED'
-                  }
-                }
-              ],
-              as: 'posts'
-            }
-          },
-          {
-            $match: {
-              'posts.0': { $exists: true } // Only include tags that have at least one published post
-            }
-          },
-          {
-            $project: {
-              _id: 1,
-              name: 1,
-              slug: 1,
-              postIds: 1,
-              createdAt: 1,
-              updatedAt: 1,
-              _count: {
-                posts: { $size: '$posts' }
-              }
-              // Don't include the posts field
-            }
-          }
-        ])
-        .toArray();
+      tagDocs = await db.collection('BlogTag').find().sort({ name: 1 }).toArray();
     } catch (dbError) {
-      console.error('Database error:', dbError);
-      // Continue with dummy data if MongoDB fails
+      console.error('Database error fetching blog tags:', dbError);
+      return NextResponse.json([]);
     }
-    
-    // If no tags found in database, return empty array
-    if (!tags || tags.length === 0) {
+
+    if (!tagDocs || tagDocs.length === 0) {
       console.log('No blog tags found in database');
       return NextResponse.json([]);
     }
-    
-    // Transform _id to id for client-side compatibility
-    const transformedTags = tags.map(tag => {
-      return {
-        id: tag._id.toString(),
-        ...tag,
-        _id: undefined
-      };
+
+    let postDocs: any[] = [];
+    try {
+      postDocs = await db.collection('BlogPost')
+        .find(
+          { published: true, status: 'PUBLISHED' },
+          { projection: { tagIds: 1 } }
+        )
+        .toArray();
+    } catch (dbError) {
+      console.error('Database error fetching blog posts for tag counts:', dbError);
+      // Continue with zeroed counts if posts query fails
+    }
+
+    const postCountMap = new Map<string, number>();
+
+    postDocs.forEach((post: any) => {
+      const rawTagIds = Array.isArray(post.tagIds)
+        ? post.tagIds
+        : post.tagIds
+        ? [post.tagIds]
+        : [];
+
+      rawTagIds.forEach((tagId: any) => {
+        if (!tagId) return;
+
+        let normalizedId: string | null = null;
+        if (tagId instanceof ObjectId) {
+          normalizedId = tagId.toHexString();
+        } else if (typeof tagId === 'string') {
+          if (ObjectId.isValid(tagId)) {
+            normalizedId = new ObjectId(tagId).toHexString();
+          } else {
+            normalizedId = tagId;
+          }
+        }
+
+        if (!normalizedId) return;
+        postCountMap.set(normalizedId, (postCountMap.get(normalizedId) ?? 0) + 1);
+      });
     });
-    
+
+    const transformedTags = tagDocs.map(tag => ({
+      id: tag._id.toString(),
+      name: tag.name,
+      slug: tag.slug,
+      postIds: tag.postIds ?? [],
+      createdAt: tag.createdAt ?? null,
+      updatedAt: tag.updatedAt ?? null,
+      _count: {
+        posts: postCountMap.get(tag._id.toString()) ?? 0
+      }
+    }));
+
     return NextResponse.json(transformedTags);
   } catch (error) {
     console.error('Error fetching blog tags:', error);

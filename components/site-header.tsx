@@ -11,6 +11,7 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
 import { usePathname } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
+import type { SiteSetting } from '@/lib/site-settings'
 import { Eye } from "lucide-react"
 import {
   DropdownMenu,
@@ -116,7 +117,7 @@ export function SiteHeader() {
         const response = await fetch('/api/site-settings')
         if (!response.ok) throw new Error('Failed to fetch site settings')
         
-        const settings = await response.json()
+        const settings = await response.json() as SiteSetting[]
         const profileData = {
           name: '',
           logo: '',
@@ -126,7 +127,7 @@ export function SiteHeader() {
           website: '',
         }
         
-        settings.forEach((setting: any) => {
+        settings.forEach((setting: SiteSetting) => {
           if (setting.key === 'profile_name') profileData.name = setting.value
           if (setting.key === 'site_logo') profileData.logo = setting.value
           if (setting.key === 'profile_github') profileData.github = setting.value
@@ -172,7 +173,7 @@ export function SiteHeader() {
             href="/"
             className={cn(
               "font-orbitron text-xl font-bold transition-all duration-300",
-              isScrolled ? "text-primary neon-text" : "text-primary"
+              isScrolled ? "text-primary" : "text-primary"
             )}
           >
             {profile.logo ? (

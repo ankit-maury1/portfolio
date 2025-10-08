@@ -9,13 +9,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, Calendar, Tag, Star, Archive, DraftingCompass, FileCheck, FileX, Bold, Italic, Underline, List, ListOrdered, Link, Image, Table, AlignLeft, AlignCenter, AlignRight, Undo, Redo, Maximize, Minimize, Save, Eye, EyeOff, Type, Hash, Quote, Code, Strikethrough } from "lucide-react";
+import { Plus, Pencil, Trash2, Calendar, Tag, Star, Archive, DraftingCompass, FileCheck, FileX, Bold, Italic, Underline, List, ListOrdered, Link, Image, Table, Undo, Redo, Maximize, Minimize, Save, Eye, EyeOff, Type, Hash, Quote, Code, Strikethrough } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import dynamic from 'next/dynamic';
+// import dynamic from 'next/dynamic';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { generateSlug } from "@/lib/utils";
 
@@ -512,6 +512,7 @@ export default function BlogManagement() {
   });
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState("");
+  const [isCreatingTag, setIsCreatingTag] = useState(false);
   const [activeTab, setActiveTab] = useState("editor");
   // Editor state for add/edit dialogs
   const [newEditorTab, setNewEditorTab] = useState<'write' | 'preview'>('write');
@@ -527,7 +528,6 @@ export default function BlogManagement() {
   const [editorMode, setEditorMode] = useState<'rich' | 'markdown'>('rich');
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const quillRef = useRef<any>(null);
   
   // Filtered blog posts based on status filter
   const filteredBlogPosts = useMemo(() => {
@@ -592,7 +592,7 @@ export default function BlogManagement() {
     const imageMatches = content.match(/!\[.*?\]\(.*?\)/g) || [];
     
     // Basic reading time (words ÷ reading speed)
-    let baseReadingTimeMin = words.length / 225;
+    const baseReadingTimeMin = words.length / 225;
     
     // Add time for complex elements
     const codeReadingTime = codeBlockMatches.length * 0.5; // 30 seconds per code block
@@ -609,16 +609,6 @@ export default function BlogManagement() {
     setWordCount(words.length);
     setCharCount(chars);
     setReadingTime(finalReadingTime);
-  };
-  
-  // Utility function to generate slug from title
-  const updateSlugFromTitle = (title: string) => {
-    const slug = generateSlug(title);
-    setNewPost(prev => ({
-      ...prev,
-      slug
-    }));
-    return slug;
   };
 
   const stripHtml = (html: string) => {
@@ -716,20 +706,8 @@ export default function BlogManagement() {
     }, 2000);
 
     return () => clearTimeout(handler);
-  }, [newPost, isAddDialogOpen]);
+  }, [newPost, isAddDialogOpen, autoSaveDraft]);
 
-  const loadDraft = () => {
-    try {
-      const raw = localStorage.getItem('blog-draft');
-      if (!raw) return;
-      const draft = JSON.parse(raw);
-      setNewPost(prev => ({ ...prev, ...draft }));
-      toast({ title: 'Draft loaded', description: 'Loaded saved draft from local storage' });
-    } catch (e) {
-      console.error('Failed to load draft', e);
-    }
-  };
-  
   // Keyboard shortcuts
   useHotkeys('ctrl+s, cmd+s', (e) => {
     e.preventDefault();
@@ -839,10 +817,68 @@ export default function BlogManagement() {
   };
   
   // Add a new tag
-  const handleAddTag = () => {
-    if (newTag.trim() && !selectedTags.includes(newTag.trim())) {
-      setSelectedTags([...selectedTags, newTag.trim()]);
+  const handleAddTag = async () => {
+    const trimmedTag = newTag.trim();
+    if (!trimmedTag) return;
+
+    // Prevent duplicate selection
+    if (selectedTags.includes(trimmedTag)) {
       setNewTag("");
+      return;
+    }
+
+    // If tag already exists in fetched list, just select it
+    const existingTag = tags.find(tag => tag.name.toLowerCase() === trimmedTag.toLowerCase());
+    if (existingTag) {
+      setSelectedTags(prev => [...prev, existingTag.name]);
+      setNewTag("");
+      toast({
+        title: "Tag selected",
+        description: `Using existing tag "${existingTag.name}"`,
+      });
+      return;
+    }
+
+    setIsCreatingTag(true);
+
+    try {
+      const response = await fetch('/api/blog-tags', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name: trimmedTag }),
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => ({ error: 'Failed to create tag' }));
+        throw new Error(errorBody.error || 'Failed to create tag');
+      }
+
+      const createdTag = await response.json();
+      const preparedTag: BlogTag = {
+        id: createdTag.id,
+        name: createdTag.name,
+        slug: createdTag.slug,
+      };
+
+      setTags(prev => [...prev, preparedTag].sort((a, b) => a.name.localeCompare(b.name)));
+      setSelectedTags(prev => [...prev, preparedTag.name]);
+      setNewTag("");
+
+      toast({
+        title: "Tag created",
+        description: `Created new tag "${preparedTag.name}"`,
+      });
+    } catch (error: unknown) {
+      console.error('Error creating tag:', error);
+      toast({
+        title: "Error",
+        description: (error as Error)?.message || 'Failed to create tag',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsCreatingTag(false);
     }
   };
   
@@ -915,12 +951,12 @@ export default function BlogManagement() {
       
       // Refresh blog post list
       fetchBlogPosts();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error adding blog post:', error);
-      setSaveError(error.message);
+      setSaveError((error as Error)?.message);
       toast({
         title: "Error",
-        description: error.message || "Failed to save blog post",
+        description: (error as Error)?.message || "Failed to save blog post",
         variant: "destructive"
       });
     } finally {
@@ -960,11 +996,11 @@ export default function BlogManagement() {
       // Close dialog and refresh list
       setIsEditDialogOpen(false);
       fetchBlogPosts();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error updating blog post:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to update blog post",
+        description: (error as Error)?.message || "Failed to update blog post",
         variant: "destructive"
       });
     }
@@ -992,11 +1028,11 @@ export default function BlogManagement() {
       // Close dialog and refresh list
       setIsDeleteDialogOpen(false);
       fetchBlogPosts();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error deleting blog post:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to delete blog post",
+        description: (error as Error)?.message || "Failed to delete blog post",
         variant: "destructive"
       });
     }
@@ -1028,56 +1064,6 @@ export default function BlogManagement() {
 
     setBulkAction({ type: 'status', status: newStatus });
     setIsBulkDialogOpen(true);
-  };
-
-  // Execute bulk status update
-  const executeBulkUpdate = async () => {
-    if (!bulkAction) return;
-    
-    const postsToUpdate = filteredBlogPosts.filter(post => post.status !== bulkAction.status);
-    
-    try {
-      const updatePromises = postsToUpdate.map(async (post) => {
-        const response = await fetch(`/api/blog-admin/${post.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            ...post,
-            status: bulkAction.status,
-            published: bulkAction.status === 'PUBLISHED',
-            publishedAt: bulkAction.status === 'PUBLISHED' ? new Date().toISOString() : post.publishedAt,
-          }),
-        });
-        
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(`Failed to update ${post.title}: ${error.error || 'Unknown error'}`);
-        }
-        
-        return response.json();
-      });
-
-      await Promise.all(updatePromises);
-      
-      toast({
-        title: "Success",
-        description: `Updated ${postsToUpdate.length} post${postsToUpdate.length > 1 ? 's' : ''} to ${bulkAction.status.toLowerCase()}`,
-      });
-      
-      // Close dialog and refresh the list
-      setIsBulkDialogOpen(false);
-      setBulkAction(null);
-      fetchBlogPosts();
-    } catch (error: any) {
-      console.error('Error bulk updating posts:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update posts",
-        variant: "destructive"
-      });
-    }
   };
 
   // Load data on component mount
@@ -1487,10 +1473,15 @@ export default function BlogManagement() {
                       placeholder="Add a new tag"
                       value={newTag}
                       onChange={(e) => setNewTag(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleAddTag()}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddTag();
+                        }
+                      }}
                     />
-                    <Button type="button" onClick={handleAddTag} variant="outline">
-                      Add
+                    <Button type="button" onClick={handleAddTag} variant="outline" disabled={isCreatingTag}>
+                      {isCreatingTag ? 'Adding…' : 'Add'}
                     </Button>
                   </div>
                 </div>

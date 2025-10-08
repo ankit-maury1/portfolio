@@ -125,7 +125,7 @@ export function HeroSection() {
               <span className="inline-block">Loading...</span>
             ) : (
               <>
-                Hi, I'm <span className="text-primary">{profile.name || "Ankit Maury"}</span>
+                Hi, I&apos;m <span className="text-primary">{profile.name || "Ankit Maury"}</span>
                 {profile.role && (
                   <div className="text-xl md:text-2xl font-light text-gray-300 mt-2">
                     {profile.role}

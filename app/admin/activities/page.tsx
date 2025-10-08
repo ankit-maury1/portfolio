@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
-import { useSession } from 'next-auth/react';
+import { getActivityStyle } from '@/lib/activity-style';
 
 interface ActivityItem {
   _id: string;
@@ -25,7 +25,6 @@ interface PaginationInfo {
 }
 
 export default function ActivitiesHistoryPage() {
-  const { data: session } = useSession();
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [pagination, setPagination] = useState<PaginationInfo>({ total: 0, page: 1, pageSize: 20, totalPages: 1 });
   const [isLoading, setIsLoading] = useState(true);
@@ -60,9 +59,6 @@ export default function ActivitiesHistoryPage() {
     fetchActivities(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [typeFilter, includeViews]);
-
-  // Centralized style mapping
-  const { getActivityStyle } = require('@/lib/activity-style');
 
   return (
     <div className="p-6">

@@ -182,11 +182,13 @@ export async function markContactMessageAsReplied(id: string, isReplied: boolean
       const message = await getContactMessageById(id);
       if (message && 'name' in message && 'subject' in message) {
         const { trackDetailedActivity } = await import('./activity-tracking');
+        const name = (message as ContactMessage).name ?? 'Contact Message';
+        const subject = (message as ContactMessage).subject ?? '';
         await trackDetailedActivity(
           'contact',
-          `Contact from ${(message as any).name}`,
+          `Contact from ${name}`,
           'reply',
-          `Replied to message "${(message as any).subject}"`,
+          `Replied to message "${subject}"`,
           `/admin/contact`,
           'admin'
         );
@@ -207,11 +209,12 @@ export async function deleteContactMessage(id: string) {
     // Track delete activity
     if (message && 'subject' in message) {
       const { trackDetailedActivity } = await import('./activity-tracking');
+      const subject = (message as ContactMessage).subject ?? 'Contact Message';
       await trackDetailedActivity(
         'contact',
-        (message as any).subject || 'Contact Message',
+        subject,
         'delete',
-        `Deleted contact message: ${(message as any).subject || ''}`,
+        `Deleted contact message: ${subject}`,
         `/admin/contact`,
         'admin'
       );

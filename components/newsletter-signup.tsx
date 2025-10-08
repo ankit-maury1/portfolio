@@ -35,8 +35,8 @@ export default function NewsletterSignup() {
 
       setMessage('Thanks — you are subscribed!');
       setEmail('');
-    } catch (err: any) {
-      setMessage(err?.message || 'Subscription failed. Try again later.');
+    } catch (err: unknown) {
+      setMessage((err instanceof Error ? err.message : null) || 'Subscription failed. Try again later.');
     } finally {
       setLoading(false);
     }

@@ -8,7 +8,13 @@ export default function ProfileEditor() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [profile, setProfile] = useState<any>({ name: '', title: '', summary: '', username: '' });
+  interface Profile {
+    name: string;
+    title: string;
+    summary: string;
+    username: string;
+  }
+  const [profile, setProfile] = useState<Profile>({ name: '', title: '', summary: '', username: '' });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
