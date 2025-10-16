@@ -26,6 +26,8 @@ type Project = {
   skillIds: string[]; // actual IDs used in API
 };
 
+type ProjectOrPartial = Project | (Omit<Project, 'id' | 'skillIds'> & {id?: string, skillIds?: string[]});
+
 interface SkillOption { id: string; name: string; }
 
 export default function ProjectsManagement() {
@@ -139,7 +141,7 @@ export default function ProjectsManagement() {
     setNewTech("");
   };
 
-  const removeTechnology = (project: Project | (Omit<Project, 'id' | 'skillIds'> & {id?: string, skillIds?: string[]}), techToRemove: string) => {
+  const removeTechnology = (project: ProjectOrPartial, techToRemove: string) => {
     const updatedTech = project.technologies.filter((tech: string) => tech !== techToRemove);
     if (project === newProject) {
       setNewProject({...newProject, technologies: updatedTech});
@@ -152,8 +154,8 @@ export default function ProjectsManagement() {
   const toggleSkill = (
     skillId: string,
     skillName: string,
-    project: Project | (Omit<Project, 'id' | 'skillIds'> & {id?: string, skillIds?: string[]}),
-    setProject: (p: Project | (Omit<Project, 'id' | 'skillIds'> & {id?: string, skillIds?: string[]})) => void
+    project: ProjectOrPartial,
+    setProject: (p: ProjectOrPartial) => void
   ) => {
     const currentIds: string[] = project.skillIds || [];
     const has = currentIds.includes(skillId);
