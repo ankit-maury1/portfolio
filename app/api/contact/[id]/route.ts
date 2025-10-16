@@ -16,7 +16,7 @@ export async function GET(
     }
 
   const messageRaw = await getContactMessageById(params.id);
-  const message = messageRaw && typeof messageRaw === 'object' ? (messageRaw as any) : null;
+  const message = messageRaw && typeof messageRaw === 'object' ? messageRaw : null;
 
     if (!message) {
       return NextResponse.json({ error: 'Message not found' }, { status: 404 });

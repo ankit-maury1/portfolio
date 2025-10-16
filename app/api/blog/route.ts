@@ -65,8 +65,18 @@ export async function GET() {
 		}
 
 		// Transform MongoDB documents for client-side compatibility
-		const transformedPosts = blogPosts.map((post: any) => {
-			const tags = post.tags?.map((tag: any) => tag.name || tag) || [];
+		const transformedPosts = blogPosts.map((post: {
+			_id: ObjectId;
+			title: string;
+			slug: string;
+			summary?: string;
+			content: string;
+			coverImage?: string;
+			publishedAt?: Date;
+			createdAt: Date;
+			tags?: Array<{ name: string } | string>;
+		}) => {
+			const tags = post.tags?.map((tag: { name: string } | string) => typeof tag === 'string' ? tag : tag.name) || [];
       
 			return {
 				id: post._id.toString(),

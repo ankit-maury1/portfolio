@@ -25,7 +25,7 @@ export async function POST(req: Request) {
     await insertOne('NewsletterSubscribers', doc);
 
     return NextResponse.json({ ok: true });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Newsletter POST error:', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }

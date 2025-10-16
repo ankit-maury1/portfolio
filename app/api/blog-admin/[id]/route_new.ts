@@ -88,7 +88,7 @@ export async function GET(
       createdAt: blogPost.createdAt,
       updatedAt: blogPost.updatedAt,
       status: blogPost.status || (blogPost.published ? 'PUBLISHED' : 'DRAFT'),
-      tags: blogPost.tags?.map((tag: any) => ({
+      tags: blogPost.tags?.map((tag: { _id: ObjectId; name: string; slug: string }) => ({
         id: tag._id.toString(),
         name: tag.name,
         slug: tag.slug
@@ -145,7 +145,7 @@ export async function PUT(
       try {
         // Check if we need to convert tag names to IDs
         if (typeof data.tags[0] === 'string' || typeof data.tags[0] === 'object' && data.tags[0].name) {
-          const tagDocs = await Promise.all(data.tags.map(async (tag: string | any) => {
+          const tagDocs = await Promise.all(data.tags.map(async (tag: string | { name: string; id?: string }) => {
             const tagName = typeof tag === 'string' ? tag : tag.name;
 
             // Find or create tag

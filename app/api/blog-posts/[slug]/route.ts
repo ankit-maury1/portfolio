@@ -73,7 +73,7 @@ export async function GET(
     }
 
     // Transform for client-side compatibility
-    const tags = blogPost.tags?.map((tag: any) => tag.name || tag) || [];
+    const tags = blogPost.tags?.map((tag: { name: string } | string) => typeof tag === 'string' ? tag : tag.name) || [];
 
     const transformedPost = {
       id: blogPost._id.toString(),
