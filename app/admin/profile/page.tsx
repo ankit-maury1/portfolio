@@ -133,7 +133,7 @@ export default function AdminProfile() {
       // Add taglines
       // First, get existing taglines
       const existingTaglines = await fetch('/api/site-settings').then(res => res.json())
-        .then(settings => settings.filter((s: any) => s.key.startsWith('profile_tagline_')));
+        .then(settings => settings.filter((s: { key: string; value: string }) => s.key.startsWith('profile_tagline_')));
       
       // For existing taglines, we'll overwrite them with empty values 
       // (which will not be included in the new settings)

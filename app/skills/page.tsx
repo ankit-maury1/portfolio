@@ -74,8 +74,8 @@ export default function SkillsPage() {
         
         const settings = await response.json();
         // Map settings to profile data
-        const profileData: any = {};
-        settings.forEach((setting: any) => {
+        const profileData: Record<string, string> = {};
+        settings.forEach((setting: { key: string; value: string }) => {
           if (setting.key === 'profile_name') profileData.name = setting.value;
           if (setting.key === 'profile_bio') profileData.bio = setting.value;
           if (setting.key === 'profile_role') profileData.role = setting.value;

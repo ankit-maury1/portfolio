@@ -46,7 +46,18 @@ export default function ProjectsManagement() {
         const data = await response.json();
         
         // Transform data to match our frontend Project type
-        const formattedProjects: Project[] = data.map((p: any) => ({
+        const formattedProjects: Project[] = data.map((p: {
+          id: string;
+          title: string;
+          description: string;
+          coverImage?: string;
+          status?: string;
+          category?: string;
+          featured?: boolean;
+          liveUrl?: string;
+          githubUrl?: string;
+          skills?: Array<{ name: string; id?: string; _id?: string }>;
+        }) => ({
           id: p.id,
           title: p.title,
           description: p.description,
@@ -56,8 +67,8 @@ export default function ProjectsManagement() {
           featured: p.featured,
           liveUrl: p.liveUrl || '',
           githubUrl: p.githubUrl || '',
-          technologies: p.skills?.map((ps: any) => ps.name) || [],
-          skillIds: p.skills?.map((ps: any) => ps.id || ps._id)?.filter(Boolean) || []
+          technologies: p.skills?.map((ps: { name: string }) => ps.name) || [],
+          skillIds: p.skills?.map((ps: { id?: string; _id?: string }) => ps.id || ps._id)?.filter(Boolean) || []
         }));
         
         setProjects(formattedProjects);
@@ -79,7 +90,7 @@ export default function ProjectsManagement() {
         const res = await fetch('/api/skills');
         if (!res.ok) return;
         const data = await res.json();
-        const options: SkillOption[] = data.map((s: any) => ({ id: s.id || s._id, name: s.name }));
+        const options: SkillOption[] = data.map((s: { id?: string; _id?: string; name: string }) => ({ id: s.id || s._id, name: s.name }));
         setSkills(options);
       } catch (e) {
         console.error('Failed to load skills', e);
@@ -201,8 +212,8 @@ export default function ProjectsManagement() {
         featured: createdProject.featured,
   liveUrl: createdProject.liveUrl || '',
   githubUrl: createdProject.githubUrl || '',
-        technologies: (createdProject.skills || []).map((s: any) => s.name) || [],
-        skillIds: (createdProject.skills || []).map((s: any) => s.id || s._id) || []
+        technologies: (createdProject.skills || []).map((s: { name: string }) => s.name) || [],
+        skillIds: (createdProject.skills || []).map((s: { id?: string; _id?: string }) => s.id || s._id) || []
       };
       
       setProjects([...projects, formattedProject]);
@@ -272,8 +283,8 @@ export default function ProjectsManagement() {
               githubUrl: updatedProject.githubUrl || '',
               status: updatedProject.status || proj.status,
               category: updatedProject.category || proj.category,
-              technologies: (updatedProject.skills || []).map((s: any) => s.name) || proj.technologies,
-              skillIds: (updatedProject.skills || []).map((s: any) => s.id || s._id) || proj.skillIds
+              technologies: (updatedProject.skills || []).map((s: { name: string }) => s.name) || proj.technologies,
+              skillIds: (updatedProject.skills || []).map((s: { id?: string; _id?: string }) => s.id || s._id) || proj.skillIds
             } : proj
           );
       

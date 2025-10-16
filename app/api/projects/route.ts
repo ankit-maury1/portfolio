@@ -28,7 +28,7 @@ export async function GET() {
       id: project._id.toString(),
       status: project.status || 'planned',
       category: project.category || 'general',
-      skills: project.skills.map((skill: any) => ({
+      skills: project.skills.map((skill: { _id: ObjectId; name: string; proficiency?: string; icon?: string }) => ({
         ...skill,
         id: skill._id.toString(),
         _id: undefined
@@ -115,7 +115,7 @@ export async function POST(request: Request) {
     if (skillObjectIds.length > 0) {
       await db.collection('Skill').updateMany(
         { _id: { $in: skillObjectIds } },
-        { $push: { projectIds: result.insertedId } } as any
+        { $push: { projectIds: result.insertedId } }
       );
     }
     
@@ -127,7 +127,7 @@ export async function POST(request: Request) {
     const project = {
       ...newProject,
       id: result.insertedId.toString(),
-      skills: skills.map((skill: any) => ({
+      skills: skills.map((skill: { _id: ObjectId; name: string; proficiency?: string; icon?: string }) => ({
         ...skill,
         id: skill._id.toString(),
         _id: undefined

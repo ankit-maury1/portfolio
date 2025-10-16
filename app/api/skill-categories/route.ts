@@ -25,7 +25,7 @@ export async function GET() {
     const formattedCategories = categories.map(category => ({
       ...category,
       id: category._id.toString(),
-      skills: category.skills.map((skill: any) => ({
+      skills: category.skills.map((skill: { _id: ObjectId; name: string; proficiency?: string; categoryId: ObjectId }) => ({
         ...skill,
         id: skill._id.toString(),
         categoryId: skill.categoryId.toString(),
@@ -109,7 +109,13 @@ export async function PUT(request: NextRequest) {
     const db = await getDatabase();
     const objectId = typeof id === 'string' ? new (await import('mongodb')).ObjectId(id) : id;
 
-    const updateDoc: any = { updatedAt: new Date() };
+    const updateDoc: {
+      updatedAt: Date;
+      name?: string;
+      description?: string;
+      icon?: string;
+      order?: number;
+    } = { updatedAt: new Date() };
     if (name !== undefined) updateDoc.name = name;
     if (description !== undefined) updateDoc.description = description;
     if (icon !== undefined) updateDoc.icon = icon;

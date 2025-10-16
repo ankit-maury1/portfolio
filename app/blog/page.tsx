@@ -54,14 +54,14 @@ export default function BlogPage() {
   useEffect(() => {
     const tagParam = searchParams.get('tag');
     console.log('URL tag param:', tagParam);
-    console.log('Available tags:', tags.length, tags.map((t: any) => ({ name: t.name, slug: t.slug })));
+    console.log('Available tags:', tags.length, tags.map((t: { name: string; slug: string }) => ({ name: t.name, slug: t.slug })));
 
     if (tagParam && tags.length > 0) {
       // Find the tag by name (case-insensitive), then by slug
-      const tagByName = tags.find((tag: any) =>
+      const tagByName = tags.find((tag: { name: string; slug: string }) =>
         tag.name.toLowerCase().trim() === tagParam.toLowerCase().trim()
       );
-      const tagBySlug = tags.find((tag: any) => tag.slug === tagParam);
+      const tagBySlug = tags.find((tag: { name: string; slug: string }) => tag.slug === tagParam);
 
       console.log('Tag by name:', tagByName);
       console.log('Tag by slug:', tagBySlug);
@@ -105,7 +105,7 @@ export default function BlogPage() {
         }
         const postsData = await postsResponse.json();
         setPosts(postsData);
-        console.log('Loaded posts:', postsData.length, postsData.map((p: any) => ({ title: p.title, tags: p.tags })));
+        console.log('Loaded posts:', postsData.length, postsData.map((p: { title: string; tags: string[] }) => ({ title: p.title, tags: p.tags })));
         
         // Fetch tags
         const tagsResponse = await fetch('/api/blog-tags');
@@ -114,7 +114,7 @@ export default function BlogPage() {
         }
         const tagsData = await tagsResponse.json();
         setTags(tagsData);
-        console.log('Loaded tags:', tagsData.length, tagsData.map((t: any) => ({ name: t.name, slug: t.slug })));
+        console.log('Loaded tags:', tagsData.length, tagsData.map((t: { name: string; slug: string }) => ({ name: t.name, slug: t.slug })));
       } catch (error) {
         console.error('Error fetching blog data:', error);
         // Use empty arrays as fallback if there's an error

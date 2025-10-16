@@ -122,7 +122,7 @@ export async function PUT(
       { returnDocument: 'after' }
     );
     
-    const updatedDoc: any = (result as any)?.value || result; // compatibility if driver returns { value }
+    const updatedDoc = result.value || result; // compatibility if driver returns { value }
     
     if (!updatedDoc) {
       return NextResponse.json({ error: "Failed to update skill" }, { status: 500 });
@@ -133,7 +133,7 @@ export async function PUT(
       _id: updatedDoc.categoryId
     });
     
-    const formattedResult: any = {
+    const formattedResult = {
       ...updatedDoc,
       id: updatedDoc._id.toString(),
       categoryId: updatedDoc.categoryId.toString(),
@@ -149,9 +149,9 @@ export async function PUT(
     try {
       await trackDetailedActivity(
         'skill',
-        (formattedResult as any).name || 'Skill',
+        formattedResult.name || 'Skill',
         'update',
-        `Updated skill: ${(formattedResult as any).name}`,
+        `Updated skill: ${formattedResult.name}`,
         '/admin/skills',
         session.user.name || 'Admin'
       );
@@ -197,7 +197,7 @@ export async function DELETE(
     if (existingSkill.projectIds && existingSkill.projectIds.length > 0) {
       await db.collection('Project').updateMany(
         { skillIds: new ObjectId(id) },
-        { $pull: { skillIds: new ObjectId(id) } } as any
+        { $pull: { skillIds: new ObjectId(id) } }
       );
     }
 

@@ -167,7 +167,12 @@ export default function BlogPostPage() {
               <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               components={{
-                code({node, inline, className, children, ...props}: any) {
+                code({node, inline, className, children, ...props}: {
+                  node?: unknown;
+                  inline?: boolean;
+                  className?: string;
+                  children?: React.ReactNode;
+                }) {
                   const match = /language-(\w+)/.exec(className || '');
                   return !inline && match ? (
                     <SyntaxHighlighter
