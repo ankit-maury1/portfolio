@@ -150,7 +150,7 @@ export async function PUT(
       if (skillsToRemove.length > 0) {
         await db.collection('Skill').updateMany(
           { _id: { $in: skillsToRemove } },
-          { $pull: { projectIds: new ObjectId(params.id) } } as any
+          { $pull: { projectIds: new ObjectId(params.id) } }
         );
       }
     }
@@ -165,7 +165,7 @@ export async function PUT(
     if (skillsToAdd.length > 0) {
       await db.collection('Skill').updateMany(
         { _id: { $in: skillsToAdd } },
-        { $push: { projectIds: new ObjectId(params.id) } } as any
+        { $push: { projectIds: new ObjectId(params.id) } }
       );
     }
 
@@ -178,20 +178,33 @@ export async function PUT(
       return `https://${trimmed}`;
     };
 
-    const updateData: Partial<MongoProject> & { updatedAt: Date; skillIds: ObjectId[] } = {
+    const updateData: {
+      updatedAt: Date;
+      skillIds: ObjectId[];
+      title?: string;
+      slug?: string;
+      description?: string;
+      content?: string;
+      featured?: boolean;
+      githubUrl?: string | null;
+      liveUrl?: string | null;
+      coverImage?: string;
+      status?: string;
+      category?: string;
+    } = {
       updatedAt: new Date(),
       skillIds: newSkillObjectIds
-    } as const;
-    if (title !== undefined) (updateData as any).title = title;
-    if (slug !== undefined) (updateData as any).slug = slug;
-    if (description !== undefined) (updateData as any).description = description;
-    if (content !== undefined) (updateData as any).content = content;
-    if (featured !== undefined) (updateData as any).featured = featured;
-    if (githubUrl !== undefined) (updateData as any).githubUrl = normalizeUrl(githubUrl);
-    if (liveUrl !== undefined) (updateData as any).liveUrl = normalizeUrl(liveUrl);
-    if (coverImage !== undefined) (updateData as any).coverImage = coverImage;
-    if (status !== undefined) (updateData as any).status = status;
-    if (category !== undefined) (updateData as any).category = category;
+    };
+    if (title !== undefined) updateData.title = title;
+    if (slug !== undefined) updateData.slug = slug;
+    if (description !== undefined) updateData.description = description;
+    if (content !== undefined) updateData.content = content;
+    if (featured !== undefined) updateData.featured = featured;
+    if (githubUrl !== undefined) updateData.githubUrl = normalizeUrl(githubUrl);
+    if (liveUrl !== undefined) updateData.liveUrl = normalizeUrl(liveUrl);
+    if (coverImage !== undefined) updateData.coverImage = coverImage;
+    if (status !== undefined) updateData.status = status;
+    if (category !== undefined) updateData.category = category;
 
     await db.collection('Project').updateOne(
       { _id: new ObjectId(params.id) },
@@ -264,7 +277,7 @@ export async function DELETE(
     if (project.skillIds?.length > 0) {
       await db.collection('Skill').updateMany(
         { _id: { $in: project.skillIds } },
-        { $pull: { projectIds: new ObjectId(params.id) } } as any
+        { $pull: { projectIds: new ObjectId(params.id) } }
       );
     }
 

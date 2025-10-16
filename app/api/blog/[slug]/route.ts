@@ -30,7 +30,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
 			content: post.content,
 			coverImage: post.coverImage,
 			publishedAt: post.publishedAt || post.createdAt,
-			tags: (post.tagIds || []).map((t: any) => (t.name ? t.name : t)),
+			tags: (post.tagIds || []).map((t: { name: string } | string) => (typeof t === 'object' && 'name' in t ? t.name : t)),
 		};
 
 		return NextResponse.json(transformed);

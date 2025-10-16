@@ -77,7 +77,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Experience not found' }, { status: 404 });
     }
 
-    const updated: any = (result as any)?.value || result;
+    const updated = result.value || result;
     const responsePayload = {
       ...updated,
       id: updated._id.toString(),

@@ -221,7 +221,7 @@ export default function ContactPage() {
           </h1>
           <p className="text-gray-300 text-center mb-16 max-w-2xl mx-auto">
             Feel free to reach out with any questions, project inquiries, or just to say hello. 
-            I'm always open to discussing new opportunities and ideas.
+            I&apos;m always open to discussing new opportunities and ideas.
           </p>
           
           <div className="grid md:grid-cols-2 gap-12 items-start">
@@ -236,7 +236,7 @@ export default function ContactPage() {
               
               {formStatus === 'success' && (
                 <div className="mb-6 p-4 bg-green-900/50 border border-green-500/50 rounded-lg text-green-400">
-                  <p>Thank you for your message! I'll get back to you as soon as possible.</p>
+                  <p>Thank you for your message! I&apos;ll get back to you as soon as possible.</p>
                 </div>
               )}
               

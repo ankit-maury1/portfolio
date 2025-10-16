@@ -69,7 +69,7 @@ export async function GET() {
 
       // Transform _id to id for client-side compatibility
       const transformedPosts = blogPosts.map(post => {
-        const tags = post.tags?.map((tag: any) => tag.name || tag) || [];
+        const tags = post.tags?.map((tag: { name: string } | string) => typeof tag === 'string' ? tag : tag.name) || [];
         return {
           id: post._id.toString(),
           title: post.title,

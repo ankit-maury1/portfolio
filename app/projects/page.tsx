@@ -301,14 +301,14 @@ export default function ProjectsPage() {
           <div className="mt-16 rounded-xl border border-cyan-500/30 bg-black/50 backdrop-blur-sm p-6">
             <h2 className="text-2xl font-semibold mb-4 text-white text-center">Interested in working together?</h2>
             <p className="text-gray-300 text-center mb-6">
-              I'm always open to discussing new projects, creative ideas, or opportunities to be part of your vision.
+              I&apos;m always open to discussing new projects, creative ideas, or opportunities to be part of your vision.
             </p>
             <div className="flex justify-center">
               <Link 
                 href="/contact" 
                 className="px-8 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full text-white font-medium hover:from-cyan-600 hover:to-blue-600 transition-all transform hover:-translate-y-1"
               >
-                Let's Talk
+                Let&apos;s Talk
               </Link>
             </div>
           </div>

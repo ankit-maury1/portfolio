@@ -59,8 +59,23 @@ export async function GET() {
       .toArray();
     
     // Transform for client-side compatibility
-    const transformedPosts = blogPosts.map((post: any) => {
-      const tags = post.tags?.map((tag: any) => ({
+    const transformedPosts = blogPosts.map((post: {
+      _id: ObjectId;
+      title: string;
+      slug: string;
+      summary?: string;
+      content: string;
+      coverImage?: string;
+      excerpt?: string;
+      featured?: boolean;
+      published?: boolean;
+      viewCount?: number;
+      createdAt: Date;
+      updatedAt?: Date;
+      tags?: Array<{ _id: ObjectId; name: string; slug: string }>;
+      userDetails?: { name?: string; email?: string };
+    }) => {
+      const tags = post.tags?.map((tag: { _id: ObjectId; name: string; slug: string }) => ({
         id: tag._id.toString(),
         name: tag.name,
         slug: tag.slug

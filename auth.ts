@@ -23,7 +23,7 @@ declare module "next-auth" {
 }
 
 export const authConfig = {
-  adapter: MongoDBAdapter(getMongoClient()) as any,
+  adapter: MongoDBAdapter(getMongoClient()),
   providers: [
     CredentialsProvider({
       name: "Credentials",

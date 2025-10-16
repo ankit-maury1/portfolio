@@ -23,14 +23,14 @@ export async function GET() {
       environment: envStatus,
       timestamp: new Date().toISOString(),
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error checking database status:", error);
     
     return NextResponse.json(
       {
         success: false,
         message: "Error checking database status",
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );

@@ -74,8 +74,8 @@ export default function SkillsPage() {
         
         const settings = await response.json();
         // Map settings to profile data
-        const profileData: any = {};
-        settings.forEach((setting: any) => {
+        const profileData: Record<string, string> = {};
+        settings.forEach((setting: { key: string; value: string }) => {
           if (setting.key === 'profile_name') profileData.name = setting.value;
           if (setting.key === 'profile_bio') profileData.bio = setting.value;
           if (setting.key === 'profile_role') profileData.role = setting.value;
@@ -259,7 +259,7 @@ export default function SkillsPage() {
           <div className="mt-16 rounded-xl border border-purple-500/30 bg-black/50 backdrop-blur-sm p-6">
             <h2 className="text-2xl font-semibold mb-4 text-white text-center">My Learning Journey</h2>
             <p className="text-gray-300 text-center mb-6">
-              Technology is always evolving, and so are my skills. I'm constantly learning and exploring new technologies to stay ahead of the curve.
+              Technology is always evolving, and so are my skills. I&apos;m constantly learning and exploring new technologies to stay ahead of the curve.
             </p>
             <div className="flex justify-center">
               <a 

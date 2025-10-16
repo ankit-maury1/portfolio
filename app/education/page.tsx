@@ -252,7 +252,7 @@ export default function EducationPage() {
               Get in Touch
             </Link>
             <p className="mt-3 text-gray-400">
-              Interested in discussing my qualifications? Let's connect.
+              Interested in discussing my qualifications? Let&apos;s connect.
             </p>
           </div>
         </div>

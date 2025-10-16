@@ -8,7 +8,14 @@ export async function GET() {
     const db = await getDatabase();
     
     // Try to fetch tags and related post counts from MongoDB
-    let tagDocs: any[] = [];
+    let tagDocs: Array<{
+      _id: ObjectId;
+      name: string;
+      slug: string;
+      postIds?: string[];
+      createdAt?: Date;
+      updatedAt?: Date;
+    }> = [];
     try {
       tagDocs = await db.collection('BlogTag').find().sort({ name: 1 }).toArray();
     } catch (dbError) {
@@ -21,7 +28,7 @@ export async function GET() {
       return NextResponse.json([]);
     }
 
-    let postDocs: any[] = [];
+    let postDocs: Array<{ tagIds?: ObjectId | ObjectId[] }> = [];
     try {
       postDocs = await db.collection('BlogPost')
         .find(
@@ -36,14 +43,14 @@ export async function GET() {
 
     const postCountMap = new Map<string, number>();
 
-    postDocs.forEach((post: any) => {
+    postDocs.forEach((post: { tagIds?: ObjectId | ObjectId[] }) => {
       const rawTagIds = Array.isArray(post.tagIds)
         ? post.tagIds
         : post.tagIds
         ? [post.tagIds]
         : [];
 
-      rawTagIds.forEach((tagId: any) => {
+      rawTagIds.forEach((tagId: ObjectId | string) => {
         if (!tagId) return;
 
         let normalizedId: string | null = null;

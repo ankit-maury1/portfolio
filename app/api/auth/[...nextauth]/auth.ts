@@ -13,7 +13,7 @@ export const {
   signOut
 } = NextAuth({
   // Use an async adapter initialization
-  adapter: MongoDBAdapter(getMongoClient()) as any,
+  adapter: MongoDBAdapter(getMongoClient()),
   providers: [
     CredentialsProvider({
       name: "Credentials",
