@@ -152,8 +152,8 @@ export default function ProjectsManagement() {
   const toggleSkill = (
     skillId: string,
     skillName: string,
-    project: any,
-    setProject: (p: any) => void
+    project: Project | (Omit<Project, 'id' | 'skillIds'> & {id?: string, skillIds?: string[]}),
+    setProject: (p: Project | (Omit<Project, 'id' | 'skillIds'> & {id?: string, skillIds?: string[]})) => void
   ) => {
     const currentIds: string[] = project.skillIds || [];
     const has = currentIds.includes(skillId);
