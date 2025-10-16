@@ -6,9 +6,9 @@ import Link from "next/link";
 import { format } from 'date-fns';
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-// @ts-ignore - no type declarations available for 'react-syntax-highlighter'
+// @ts-expect-error - no type declarations available for 'react-syntax-highlighter'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-// @ts-ignore - no type declarations available for 'react-syntax-highlighter' styles
+// @ts-expect-error - no type declarations available for 'react-syntax-highlighter' styles
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { motion } from "framer-motion";
 

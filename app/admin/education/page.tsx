@@ -283,7 +283,7 @@ export default function EducationManagement() {
                     })} 
                   />
                   <Label htmlFor="current" className="text-white">
-                    I'm currently studying here
+                    I&apos;m currently studying here
                   </Label>
                 </div>
               </div>
@@ -519,7 +519,7 @@ export default function EducationManagement() {
                                 })} 
                               />
                               <Label htmlFor="edit-current" className="text-white">
-                                I'm currently studying here
+                                I&apos;m currently studying here
                               </Label>
                             </div>
                           </div>
