@@ -6,10 +6,11 @@ import { trackDetailedActivity } from '@/lib/activity-tracking';
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const education = await findById('Education', params.id);
+    const { id } = await params;
+    const education = await findById('Education', id);
 
     if (!education) {
       return NextResponse.json({ error: 'Education record not found' }, { status: 404 });
@@ -28,7 +29,7 @@ export async function GET(
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -37,6 +38,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id } = await params;
     const body = await request.json();
     
     const {
@@ -69,7 +71,7 @@ export async function PUT(
     };
 
     const result = await db.collection('Education').findOneAndUpdate(
-      { _id: new ObjectId(params.id) },
+      { _id: new ObjectId(id) },
       { $set: updateData },
       { returnDocument: 'after' }
     );
@@ -108,7 +110,7 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -117,9 +119,10 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id } = await params;
     const db = await getDatabase();
-    const existing = await db.collection('Education').findOne({ _id: new ObjectId(params.id) });
-    const result = await db.collection('Education').deleteOne({ _id: new ObjectId(params.id) });
+    const existing = await db.collection('Education').findOne({ _id: new ObjectId(id) });
+    const result = await db.collection('Education').deleteOne({ _id: new ObjectId(id) });
 
     if (result.deletedCount === 0) {
       return NextResponse.json({ error: 'Education record not found' }, { status: 404 });

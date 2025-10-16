@@ -4,11 +4,18 @@ This is a personal portfolio website built with Next.js, TypeScript, and MongoDB
 
 ## Getting Started
 
-First, make sure you have MongoDB set up. This project uses MongoDB Atlas. Add your MongoDB URI to the `.env` file:
+First, set up your environment variables:
 
 ```bash
-MONGODB_URI=mongodb+srv://username:password@cluster0.example.mongodb.net/?retryWrites=true&w=majority
+# Copy the example environment file
+cp .env.example .env.local
+
+# Edit .env.local and add your credentials
+# - MONGODB_URI: Your MongoDB connection string
+# - AUTH_SECRET: Generate with: openssl rand -base64 32
 ```
+
+Make sure you have MongoDB set up. This project uses MongoDB Atlas.
 
 Then, seed the MongoDB database with initial data:
 
@@ -50,5 +57,24 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 ## Deploy on Vercel
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+
+### Deployment Steps
+
+1. **Prepare Environment Variables**
+   - Copy `.env.example` to `.env.local` for local development
+   - In Vercel dashboard, add the following environment variables:
+     - `MONGODB_URI` - Your MongoDB connection string
+     - `AUTH_SECRET` - Generate with `openssl rand -base64 32`
+
+2. **Deploy**
+   - Connect your GitHub repository to Vercel
+   - Vercel will automatically detect Next.js and configure build settings
+   - Click "Deploy" and wait for the build to complete
+
+3. **Verify**
+   - Visit your deployed site
+   - Test authentication and database connectivity
+
+For detailed information about recent deployment fixes, see [DEPLOYMENT_FIXES.md](./DEPLOYMENT_FIXES.md).
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
