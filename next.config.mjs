@@ -1,14 +1,6 @@
-// @ts-nocheck
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  
-  experimental: {
-    // Enable server actions
-    serverActions: {
-      allowedOrigins: ['localhost:3000'],
-    },
-  },
   
   // Add webpack configuration to handle specific modules in the browser
   webpack: (config, { isServer }) => {
