@@ -12,7 +12,7 @@ export interface SiteSetting {
 export async function getAllSettings(): Promise<SiteSetting[]> {
   try {
     const settings = await findMany('siteSettings', {}, { sort: { key: 1 } });
-    return settings.map(setting => ({
+    return settings.map((setting: any) => ({
       ...setting,
       _id: setting._id.toString()
     }));
@@ -30,7 +30,7 @@ export async function getSettingByKey(key: string): Promise<SiteSetting | null> 
       return {
         ...setting,
         _id: setting._id.toString()
-      };
+      } as SiteSetting;
     }
     
     return null;
@@ -72,7 +72,7 @@ export async function updateSetting(key: string, value: string): Promise<SiteSet
       return {
         ...updatedSetting,
         _id: updatedSetting._id.toString()
-      };
+      } as SiteSetting;
     }
     
     return null;
@@ -92,7 +92,7 @@ export async function initializeDefaultSettings(defaults: Record<string, string>
     // Get all existing keys
     const existingSettings = await findMany('siteSettings', {}, { projection: { key: 1 } });
     
-    const existingKeys = new Set(existingSettings.map((setting: { key: string }) => setting.key));
+    const existingKeys = new Set(existingSettings.map((setting: any) => setting.key));
     
     // Insert settings that don't exist
     for (const [key, value] of Object.entries(defaults)) {

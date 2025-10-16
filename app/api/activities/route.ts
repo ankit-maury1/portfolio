@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     const skip = (page - 1) * pageSize;
 
     // Build query
-    const query: any = {};
+    const query: { type?: string; action?: { $ne: string } } = {};
     if (typeParam) query.type = typeParam;
     if (!includeViews) query.action = { $ne: 'view' };
 
@@ -92,11 +92,20 @@ export async function POST(request: NextRequest) {
     }
     
     // Create activity with detailed tracking
-    const activityData: any = {
-      type,
+    const activityData: {
+      type: 'blog' | 'project' | 'skill' | 'experience' | 'education' | 'profile' | 'contact' | 'system';
+      title: string;
+      description: string;
+      action: 'create' | 'update' | 'delete' | 'view' | 'reply' | 'mark_read' | 'archive';
+      timestamp: Date;
+      details?: string;
+      path?: string;
+      user?: string;
+    } = {
+      type: type as 'blog' | 'project' | 'skill' | 'experience' | 'education' | 'profile' | 'contact' | 'system',
       title,
       description: description || '',
-      action,
+      action: action as 'create' | 'update' | 'delete' | 'view' | 'reply' | 'mark_read' | 'archive',
       timestamp: new Date(),
       details: details || '',
       path: path || ''

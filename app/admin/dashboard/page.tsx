@@ -23,7 +23,16 @@ export default function DashboardPage() {
   });
   
   const [isLoading, setIsLoading] = useState(true);
-  const [activities, setActivities] = useState<any[]>([]);
+  const [activities, setActivities] = useState<Array<{
+    _id?: string;
+    type: string;
+    title?: string;
+    description?: string;
+    timestamp: string;
+    detailedTime?: string;
+    user?: string;
+    metadata?: Record<string, unknown>;
+  }>>([]);
   const [activitiesLoading, setActivitiesLoading] = useState(true);
   
   // Fetch dashboard stats with auto-refresh

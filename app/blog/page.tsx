@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { motion, useInView } from "framer-motion";
 import Link from "next/link";
 import dynamic from 'next/dynamic';
@@ -41,6 +41,14 @@ interface BlogTag {
 }
 
 export default function BlogPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <BlogContent />
+    </Suspense>
+  );
+}
+
+function BlogContent() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [tags, setTags] = useState<BlogTag[]>([]);
   const [isLoading, setIsLoading] = useState(true);

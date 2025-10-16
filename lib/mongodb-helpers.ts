@@ -47,7 +47,7 @@ export async function findById<T extends Document = Document>(collection: string
 
 export async function insertOne<T extends Document = Document>(collection: string, document: OptionalUnlessRequiredId<T>): Promise<InsertOneResult<WithId<T>>> {
   const db = await getDatabase();
-  return db.collection<T>(collection).insertOne(document as T) as Promise<InsertOneResult<WithId<T>>>;
+  return db.collection<T>(collection).insertOne(document as OptionalUnlessRequiredId<T>) as Promise<InsertOneResult<WithId<T>>>;
 }
 
 export async function updateOne<T extends Document = Document>(collection: string, filter: Filter<T>, update: UpdateFilter<T> | Partial<T>): Promise<UpdateResult> {

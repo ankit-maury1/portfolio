@@ -10,7 +10,7 @@ const nextConfig = {
   },
   
   // Add webpack configuration to handle specific modules in the browser
-  webpack: (config, { isServer }) => {
+  webpack: (config: any, { isServer }: { isServer: boolean }) => {
     // If client-side bundle
     if (!isServer) {
       // Make Node.js server-only modules empty objects

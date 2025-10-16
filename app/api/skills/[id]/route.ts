@@ -6,10 +6,10 @@ import { trackDetailedActivity } from '@/lib/activity-tracking';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = params.id;
+    const { id } = await params;
     const db = await getDatabase();
 
     // Using MongoDB aggregation to join skill with its category
@@ -64,9 +64,10 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await auth();
 
     // Check if user is authorized
@@ -74,7 +75,6 @@ export async function PUT(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const id = params.id;
     const data = await request.json();
     const { name, proficiency, icon, color, categoryId, featured } = data;
     const db = await getDatabase();
@@ -171,9 +171,10 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: skillId } = await params;
     const session = await auth();
 
     // Check if user is authorized
@@ -181,12 +182,11 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const id = params.id;
     const db = await getDatabase();
 
     // Verify the skill exists
     const existingSkill = await db.collection('Skill').findOne({
-      _id: new ObjectId(id)
+      _id: new ObjectId(skillId)
     });
 
     if (!existingSkill) {
@@ -196,14 +196,15 @@ export async function DELETE(
     // Remove the skill from any projects that reference it
     if (existingSkill.projectIds && existingSkill.projectIds.length > 0) {
       await db.collection('Project').updateMany(
-        { skillIds: new ObjectId(id) },
-        { $pull: { skillIds: new ObjectId(id) } } as any
+        { skillIds: new ObjectId(skillId) },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { $pull: { skillIds: new ObjectId(skillId) } } as any
       );
     }
 
     // Delete the skill
     const result = await db.collection('Skill').deleteOne({
-      _id: new ObjectId(id)
+      _id: new ObjectId(skillId)
     });
 
     if (result.deletedCount === 0) {

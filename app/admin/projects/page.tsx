@@ -46,7 +46,18 @@ export default function ProjectsManagement() {
         const data = await response.json();
         
         // Transform data to match our frontend Project type
-        const formattedProjects: Project[] = data.map((p: any) => ({
+        const formattedProjects: Project[] = data.map((p: {
+          id: string;
+          title: string;
+          description: string;
+          coverImage?: string;
+          status?: string;
+          category?: string;
+          featured: boolean;
+          liveUrl?: string;
+          githubUrl?: string;
+          skills?: Array<{ name: string; id?: string; _id?: string }>;
+        }) => ({
           id: p.id,
           title: p.title,
           description: p.description,
@@ -56,8 +67,8 @@ export default function ProjectsManagement() {
           featured: p.featured,
           liveUrl: p.liveUrl || '',
           githubUrl: p.githubUrl || '',
-          technologies: p.skills?.map((ps: any) => ps.name) || [],
-          skillIds: p.skills?.map((ps: any) => ps.id || ps._id)?.filter(Boolean) || []
+          technologies: p.skills?.map((ps) => ps.name) || [],
+          skillIds: p.skills?.map((ps) => ps.id || ps._id)?.filter(Boolean) || []
         }));
         
         setProjects(formattedProjects);
@@ -79,7 +90,10 @@ export default function ProjectsManagement() {
         const res = await fetch('/api/skills');
         if (!res.ok) return;
         const data = await res.json();
-        const options: SkillOption[] = data.map((s: any) => ({ id: s.id || s._id, name: s.name }));
+        const options: SkillOption[] = data.map((s: { id?: string; _id?: string; name: string }) => ({ 
+          id: s.id || s._id, 
+          name: s.name 
+        }));
         setSkills(options);
       } catch (e) {
         console.error('Failed to load skills', e);
@@ -138,17 +152,17 @@ export default function ProjectsManagement() {
   };
 
   // Toggle skill selection (shared for add/edit dialogs)
-  const toggleSkill = (
+  const toggleSkill = <T extends Project | (Omit<Project, 'id' | 'skillIds'> & {id?: string, skillIds?: string[]})>(
     skillId: string,
     skillName: string,
-    project: any,
-    setProject: (p: any) => void
+    project: T,
+    setProject: (p: T) => void
   ) => {
     const currentIds: string[] = project.skillIds || [];
     const has = currentIds.includes(skillId);
     const nextIds = has ? currentIds.filter(id => id !== skillId) : [...currentIds, skillId];
     const techNames = skills.filter(s => nextIds.includes(s.id)).map(s => s.name);
-    setProject({ ...project, skillIds: nextIds, technologies: techNames });
+    setProject({ ...project, skillIds: nextIds, technologies: techNames } as T);
   };
 
   const normalizeUrl = (val: string) => {
@@ -272,8 +286,8 @@ export default function ProjectsManagement() {
               githubUrl: updatedProject.githubUrl || '',
               status: updatedProject.status || proj.status,
               category: updatedProject.category || proj.category,
-              technologies: (updatedProject.skills || []).map((s: any) => s.name) || proj.technologies,
-              skillIds: (updatedProject.skills || []).map((s: any) => s.id || s._id) || proj.skillIds
+              technologies: (updatedProject.skills || []).map((s: { name: string }) => s.name) || proj.technologies,
+              skillIds: (updatedProject.skills || []).map((s: { id?: string; _id?: string }) => s.id || s._id) || proj.skillIds
             } : proj
           );
       

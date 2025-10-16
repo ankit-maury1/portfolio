@@ -12,7 +12,7 @@ export function createMongoDBAdapter() {
     ...MongoDBAdapter(getMongoClient()),
     
     // Override methods to handle ObjectId properly
-    async getUser(id) {
+    async getUser(id: string) {
       const db = await getDatabase();
       const user = await db.collection('User').findOne({ _id: new ObjectId(id) });
       if (!user) return null;
@@ -23,7 +23,7 @@ export function createMongoDBAdapter() {
       };
     },
     
-    async getUserByEmail(email) {
+    async getUserByEmail(email: string) {
       const db = await getDatabase();
       const user = await db.collection('User').findOne({ email });
       if (!user) return null;
@@ -34,7 +34,7 @@ export function createMongoDBAdapter() {
       };
     },
     
-    async getUserByAccount({ provider, providerAccountId }) {
+    async getUserByAccount({ provider, providerAccountId }: { provider: string; providerAccountId: string }) {
       const db = await getDatabase();
       const account = await db.collection('Account').findOne({
         provider,
@@ -54,7 +54,7 @@ export function createMongoDBAdapter() {
       };
     },
     
-    async createUser(user) {
+    async createUser(user: any) {
       const db = await getDatabase();
       
       const newUser = {
@@ -72,7 +72,7 @@ export function createMongoDBAdapter() {
       };
     },
     
-    async updateUser(user) {
+    async updateUser(user: any) {
       const db = await getDatabase();
       const { id, ...userData } = user;
       

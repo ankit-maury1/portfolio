@@ -61,7 +61,14 @@ export default function SkillsManagement() {
         const skillsData = await skillsResponse.json();
         
         // Transform data to match our component's expectations
-        const transformedSkills = skillsData.map((skill: any) => ({
+        const transformedSkills = skillsData.map((skill: {
+          id: string;
+          name: string;
+          proficiency: string;
+          categoryId: string;
+          icon?: string;
+          featured: boolean;
+        }) => ({
           id: skill.id,
           name: skill.name,
           level: skill.proficiency,
@@ -158,11 +165,12 @@ export default function SkillsManagement() {
         title: "Success",
         description: `Skill "${skillToAdd.name}" has been created.`,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to create skill. Please try again.";
       console.error('Error adding skill:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to create skill. Please try again.",
+        description: errorMessage,
         variant: "destructive"
       });
     }
@@ -205,11 +213,12 @@ export default function SkillsManagement() {
         title: "Success",
         description: `Skill "${currentSkill.name}" has been updated.`,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to update skill. Please try again.";
       console.error('Error updating skill:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to update skill. Please try again.",
+        description: errorMessage,
         variant: "destructive"
       });
     }
@@ -237,11 +246,12 @@ export default function SkillsManagement() {
         title: "Success",
         description: `Skill "${currentSkill.name}" has been deleted.`,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to delete skill. Please try again.";
       console.error('Error deleting skill:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to delete skill. Please try again.",
+        description: errorMessage,
         variant: "destructive"
       });
     }
@@ -284,11 +294,12 @@ export default function SkillsManagement() {
         title: "Success",
         description: `Category "${createdCategory.name}" has been created.`,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to create category. Please try again.";
       console.error('Error adding category:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to create category. Please try again.",
+        description: errorMessage,
         variant: "destructive"
       });
     }
@@ -319,9 +330,10 @@ export default function SkillsManagement() {
       setCategories(categories.map(c => c.id === updated.id ? { ...c, ...updated } : c));
       setIsEditCategoryDialogOpen(false);
       toast({ title: 'Success', description: `Category "${updated.name}" updated.` });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update category';
       console.error('Error updating category:', error);
-      toast({ title: 'Error', description: error.message || 'Failed to update category', variant: 'destructive' });
+      toast({ title: 'Error', description: errorMessage, variant: 'destructive' });
     }
   };
 
@@ -343,9 +355,10 @@ export default function SkillsManagement() {
       setCategories(categories.filter(c => c.id !== currentCategory.id));
       setIsDeleteCategoryDialogOpen(false);
       toast({ title: 'Success', description: `Category deleted.` });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete category';
       console.error('Error deleting category:', error);
-      toast({ title: 'Error', description: error.message || 'Failed to delete category', variant: 'destructive' });
+      toast({ title: 'Error', description: errorMessage, variant: 'destructive' });
     }
   };
 

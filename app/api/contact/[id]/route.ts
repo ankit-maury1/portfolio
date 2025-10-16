@@ -6,7 +6,7 @@ import { getContactMessageById, markContactMessageAsRead, markContactMessageAsRe
 // GET - Get a specific contact message by ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -15,8 +15,9 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-  const messageRaw = await getContactMessageById(params.id);
-  const message = messageRaw && typeof messageRaw === 'object' ? (messageRaw as any) : null;
+  const { id } = await params;
+  const messageRaw = await getContactMessageById(id);
+  const message = messageRaw && typeof messageRaw === 'object' ? (messageRaw as { _id?: string; id?: string; name: string; email: string; message: string; createdAt?: Date; read?: boolean; replied?: boolean }) : null;
 
     if (!message) {
       return NextResponse.json({ error: 'Message not found' }, { status: 404 });
@@ -32,7 +33,7 @@ export async function GET(
 // PATCH - Update contact message (mark as read/replied)
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -41,6 +42,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+  const { id } = await params;
   const body = await request.json();
   const { read: readFlag, replied: repliedFlag } = body as { read?: boolean; replied?: boolean };
     
@@ -48,12 +50,12 @@ export async function PATCH(
     
     // Update read status if provided
     if (typeof readFlag === 'boolean') {
-      success = await markContactMessageAsRead(params.id, readFlag);
+      success = await markContactMessageAsRead(id, readFlag);
     }
     
     // Update replied status if provided
     if (typeof repliedFlag === 'boolean') {
-      success = await markContactMessageAsReplied(params.id, repliedFlag);
+      success = await markContactMessageAsReplied(id, repliedFlag);
     }
     
     if (!success) {
@@ -61,7 +63,7 @@ export async function PATCH(
     }
     
     // Get updated message
-    const message = await getContactMessageById(params.id);
+    const message = await getContactMessageById(id);
 
     return NextResponse.json(message);
   } catch (error) {
@@ -73,7 +75,7 @@ export async function PATCH(
 // DELETE - Delete a contact message
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -82,7 +84,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const success = await deleteContactMessage(params.id);
+    const { id } = await params;
+    const success = await deleteContactMessage(id);
     
     if (!success) {
       return NextResponse.json({ error: 'Failed to delete message' }, { status: 500 });

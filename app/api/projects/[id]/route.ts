@@ -57,15 +57,16 @@ function mapProjectWithSkills(project: WithId<MongoProject & { skills: WithId<Mo
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const db = await getDatabase();
 
     // Using MongoDB aggregation to join project with skills
     const projects = await db.collection('Project').aggregate<WithId<MongoProject & { skills: WithId<MongoSkill>[] }>>([
       {
-        $match: { _id: new ObjectId(params.id) }
+        $match: { _id: new ObjectId(id) }
       },
       {
         $lookup: {
@@ -91,9 +92,10 @@ export async function GET(
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await auth();
     
     if (!session || session.user.role !== 'ADMIN') {
@@ -128,7 +130,7 @@ export async function PUT(
     
     // First, get current project to find current skills
     const currentProject = await db.collection('Project').findOne({ 
-      _id: new ObjectId(params.id) 
+      _id: new ObjectId(id) 
     });
 
     if (!currentProject) {
@@ -150,7 +152,8 @@ export async function PUT(
       if (skillsToRemove.length > 0) {
         await db.collection('Skill').updateMany(
           { _id: { $in: skillsToRemove } },
-          { $pull: { projectIds: new ObjectId(params.id) } } as any
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          { $pull: { projectIds: new ObjectId(id) } } as any
         );
       }
     }
@@ -165,7 +168,8 @@ export async function PUT(
     if (skillsToAdd.length > 0) {
       await db.collection('Skill').updateMany(
         { _id: { $in: skillsToAdd } },
-        { $push: { projectIds: new ObjectId(params.id) } } as any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { $push: { projectIds: new ObjectId(id) } } as any
       );
     }
 
@@ -194,14 +198,14 @@ export async function PUT(
     if (category !== undefined) (updateData as any).category = category;
 
     await db.collection('Project').updateOne(
-      { _id: new ObjectId(params.id) },
+      { _id: new ObjectId(id) },
       { $set: updateData }
     );
 
     // Fetch updated project with skills
     const updatedProjects = await db.collection('Project').aggregate<WithId<MongoProject & { skills: WithId<MongoSkill>[] }>>([
       {
-        $match: { _id: new ObjectId(params.id) }
+        $match: { _id: new ObjectId(id) }
       },
       {
         $lookup: {
@@ -240,9 +244,10 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: projectId } = await params;
     const session = await auth();
     
     if (!session || session.user.role !== 'ADMIN') {
@@ -253,7 +258,7 @@ export async function DELETE(
     
     // Get project to find associated skills
     const project = await db.collection('Project').findOne({ 
-      _id: new ObjectId(params.id) 
+      _id: new ObjectId(projectId) 
     });
 
     if (!project) {
@@ -264,13 +269,14 @@ export async function DELETE(
     if (project.skillIds?.length > 0) {
       await db.collection('Skill').updateMany(
         { _id: { $in: project.skillIds } },
-        { $pull: { projectIds: new ObjectId(params.id) } } as any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { $pull: { projectIds: new ObjectId(projectId) } } as any
       );
     }
 
     // Delete project
     await db.collection('Project').deleteOne({ 
-      _id: new ObjectId(params.id) 
+      _id: new ObjectId(projectId) 
     });
 
     // Track delete activity
